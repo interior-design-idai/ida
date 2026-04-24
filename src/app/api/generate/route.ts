@@ -1,12 +1,5 @@
 import { NextRequest } from "next/server";
-import {
-  runWorkflow,
-  buildSketch2RenderWorkflow,
-  buildText2ImgWorkflow,
-  buildImg2ImgWorkflow,
-  buildUpscaleWorkflow,
-  buildStyleTransferWorkflow,
-} from "@/lib/comfyui";
+import { textToImage, sketchToRender, imageToImage, upscaleImage } from "@/lib/fal-engine";
 import { getServiceClient } from "@/lib/supabase";
 import { translatePrompt } from "@/lib/translate";
 
@@ -21,7 +14,7 @@ const CREDIT_COSTS: Record<string, number> = {
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { userId, functionType, imageBase64, roomType } = body;
+  const { userId, functionType, imageUrl, imageBase64, roomType } = body;
 
   // Auto-translate Chinese prompts to English
   const prompt = body.prompt ? await translatePrompt(body.prompt) : body.prompt;
@@ -46,61 +39,33 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    let workflow: Record<string, unknown>;
+    // Use the uploaded image URL (data URI from client)
+    const imgUrl = imageUrl || (imageBase64 ? `data:image/png;base64,${imageBase64}` : undefined);
+
+    let result;
 
     switch (functionType) {
-      case "sketch2render":
-        workflow = buildSketch2RenderWorkflow({
-          imageBase64,
-          prompt: prompt || "interior design",
-          style,
-        });
-        break;
-
       case "text2img":
-        workflow = buildText2ImgWorkflow({
-          prompt: prompt || "modern interior design",
-          style,
-          roomType,
-        });
+        result = await textToImage({ prompt, style, roomType, quality: "quality" });
         break;
-
+      case "sketch2render":
+        result = await sketchToRender({ imageUrl: imgUrl!, prompt, style });
+        break;
       case "realistic_render":
-        workflow = buildImg2ImgWorkflow({
-          imageBase64,
-          prompt: prompt || "photorealistic interior",
-          style,
-          denoise: 0.5,
-        });
+        result = await imageToImage({ imageUrl: imgUrl!, prompt, style, strength: 0.5 });
         break;
-
       case "photo_remodel":
-        workflow = buildImg2ImgWorkflow({
-          imageBase64,
-          prompt: prompt || "interior renovation",
-          style,
-          denoise: 0.6,
-        });
+        result = await imageToImage({ imageUrl: imgUrl!, prompt, style, strength: 0.65 });
         break;
-
       case "style_transfer":
-        workflow = buildStyleTransferWorkflow({
-          imageBase64,
-          style: style || "Modern Minimalist",
-        });
+        result = await imageToImage({ imageUrl: imgUrl!, prompt: style || "modern minimalist", strength: 0.6 });
         break;
-
       case "upscale":
-        workflow = buildUpscaleWorkflow({ imageBase64 });
+        result = await upscaleImage({ imageUrl: imgUrl! });
         break;
-
       default:
         return Response.json({ error: "Unknown function type" }, { status: 400 });
     }
-
-    // Run on ComfyUI via RunPod
-    const images = await runWorkflow(workflow);
-    const outputUrl = images[0] || null;
 
     // Deduct credits
     await supabase
@@ -122,19 +87,24 @@ export async function POST(request: NextRequest) {
       function_type: functionType,
       prompt: prompt || "",
       input_image_url: null,
-      output_image_url: outputUrl,
+      output_image_url: result.imageUrl,
       credits_used: creditCost,
       is_public: false,
     });
 
     return Response.json({
       success: true,
-      outputUrl,
+      outputUrl: result.imageUrl,
       creditsUsed: creditCost,
       creditsRemaining: user.credits - creditCost,
+      seed: result.seed,
+      engine: "fal.ai",
     });
   } catch (err) {
     console.error("Generation error:", err);
-    return Response.json({ error: "Generation failed" }, { status: 500 });
+    return Response.json(
+      { error: err instanceof Error ? err.message : "Generation failed" },
+      { status: 500 }
+    );
   }
 }
