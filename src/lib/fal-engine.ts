@@ -32,23 +32,31 @@ interface FalUpscaleOutput {
   data: { image: { url: string } };
 }
 
-// Sketch to Render — uses Flux image-to-image with high strength
+// Sketch to Render — uses Flux General with ControlNet for structural guidance
 export async function sketchToRender(params: {
   imageUrl: string;
   prompt: string;
   style?: string;
 }): Promise<GenerateResult> {
   const uploadedUrl = await uploadImage(params.imageUrl);
-  const fullPrompt = `Transform this architectural sketch into a photorealistic render: ${params.prompt}${params.style ? `, ${params.style} style` : ""}, photorealistic interior design, ultra realistic materials and textures, volumetric lighting, ray tracing, 8k, professional architectural photography, natural lighting, award winning interior design photo`;
+  const fullPrompt = `${params.prompt}${params.style ? `, ${params.style} style` : ""}, photorealistic interior design, ultra realistic materials and textures, volumetric lighting, 8k, professional architectural photography, natural lighting, award winning interior design photo`;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const result = (await fal.subscribe("fal-ai/flux/dev/image-to-image" as any, {
+  const result = (await fal.subscribe("fal-ai/flux-general/image-to-image" as any, {
     input: {
       image_url: uploadedUrl,
       prompt: fullPrompt,
-      strength: 0.95,
-      num_inference_steps: 30,
-      guidance_scale: 4.0,
+      image_size: "landscape_16_9",
+      num_inference_steps: 28,
+      guidance_scale: 3.5,
+      strength: 0.90,
+      controlnets: [
+        {
+          path: "Shakker-Labs/FLUX.1-dev-ControlNet-Depth",
+          control_image_url: uploadedUrl,
+          conditioning_scale: 0.6,
+        },
+      ],
     },
   })) as FalImageOutput;
 
