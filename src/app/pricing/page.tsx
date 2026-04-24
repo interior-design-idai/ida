@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { Check, Zap, Sparkles, Star } from "lucide-react";
+import { useState, useRef } from "react";
+import { Check, Zap, Sparkles, Star, Loader2 } from "lucide-react";
+import { supabase } from "@/lib/supabase-browser";
 
 const CREDIT_PACKS = [
-  { credits: 50, price: 199, perCredit: 3.98 },
-  { credits: 150, price: 499, perCredit: 3.33, popular: true },
-  { credits: 500, price: 1499, perCredit: 3.0 },
+  { id: "pack_50", credits: 50, price: 199, perCredit: 3.98 },
+  { id: "pack_150", credits: 150, price: 499, perCredit: 3.33, popular: true },
+  { id: "pack_500", credits: 500, price: 1499, perCredit: 3.0 },
 ];
 
 const SUBSCRIPTIONS = [
@@ -33,6 +34,56 @@ const SUBSCRIPTIONS = [
 
 export default function PricingPage() {
   const [tab, setTab] = useState<"packs" | "subscription">("packs");
+  const [loading, setLoading] = useState<string | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  const handlePurchase = async (packId: string) => {
+    setLoading(packId);
+
+    try {
+      // Get current user
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        window.location.href = "/login";
+        return;
+      }
+
+      // Create ECPay order
+      const res = await fetch("/api/ecpay/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ packId, userId: session.user.id }),
+      });
+
+      const { formData, paymentURL } = await res.json();
+
+      if (!res.ok) {
+        alert("建立訂單失敗，請稍後再試");
+        return;
+      }
+
+      // Create hidden form and submit to ECPay
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = paymentURL;
+      form.style.display = "none";
+
+      Object.entries(formData).forEach(([key, value]) => {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = key;
+        input.value = value as string;
+        form.appendChild(input);
+      });
+
+      document.body.appendChild(form);
+      form.submit();
+    } catch {
+      alert("發生錯誤，請稍後再試");
+    } finally {
+      setLoading(null);
+    }
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -41,6 +92,9 @@ export default function PricingPage() {
         <h1 className="text-4xl sm:text-5xl font-bold mb-4">簡單定價</h1>
         <p className="text-muted text-lg max-w-xl mx-auto">
           按次付費或月訂閱。新用戶贈送 10 點免費額度。
+        </p>
+        <p className="text-muted text-sm mt-2">
+          支援信用卡、ATM 轉帳、超商代碼繳費
         </p>
       </div>
 
@@ -90,8 +144,16 @@ export default function PricingPage() {
               <div className="text-xs text-muted mb-6">
                 每點 NT${pack.perCredit.toFixed(2)}
               </div>
-              <button className={pack.popular ? "btn-primary w-full" : "btn-secondary w-full"}>
-                立即購買
+              <button
+                onClick={() => handlePurchase(pack.id)}
+                disabled={loading === pack.id}
+                className={`${pack.popular ? "btn-primary" : "btn-secondary"} w-full flex items-center justify-center gap-2 disabled:opacity-50`}
+              >
+                {loading === pack.id ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  "立即購買"
+                )}
               </button>
             </div>
           ))}
@@ -130,11 +192,14 @@ export default function PricingPage() {
                 ))}
               </ul>
 
-              <button className={plan.popular ? "btn-primary w-full" : "btn-secondary w-full"}>
-                訂閱
+              <button className={`${plan.popular ? "btn-primary" : "btn-secondary"} w-full`}>
+                即將推出
               </button>
             </div>
           ))}
+          <p className="col-span-full text-center text-sm text-muted mt-4">
+            月訂閱方案即將推出，目前請先使用點數包購買。
+          </p>
         </div>
       )}
 
@@ -171,6 +236,13 @@ export default function PricingPage() {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Payment methods */}
+      <div className="mt-12 text-center">
+        <p className="text-xs text-muted">
+          付款由綠界科技 ECPay 安全處理 | 支援 VISA / MasterCard / JCB / ATM / 超商代碼
+        </p>
       </div>
     </div>
   );

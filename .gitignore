@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# sensitive files
+*_keys.txt
+*_key.txt
+pub_key.txt

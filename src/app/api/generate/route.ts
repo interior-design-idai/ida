@@ -8,6 +8,7 @@ import {
   buildStyleTransferWorkflow,
 } from "@/lib/comfyui";
 import { getServiceClient } from "@/lib/supabase";
+import { translatePrompt } from "@/lib/translate";
 
 const CREDIT_COSTS: Record<string, number> = {
   sketch2render: 2,
@@ -20,7 +21,11 @@ const CREDIT_COSTS: Record<string, number> = {
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { userId, functionType, prompt, imageBase64, style, roomType } = body;
+  const { userId, functionType, imageBase64, roomType } = body;
+
+  // Auto-translate Chinese prompts to English
+  const prompt = body.prompt ? await translatePrompt(body.prompt) : body.prompt;
+  const style = body.style ? await translatePrompt(body.style) : body.style;
 
   if (!userId || !functionType) {
     return Response.json({ error: "userId and functionType required" }, { status: 400 });

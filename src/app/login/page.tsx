@@ -1,20 +1,110 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Sparkles, Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { Sparkles, Mail, Lock, Eye, EyeOff, ArrowRight, Loader2, AlertCircle } from "lucide-react";
+import { supabase } from "@/lib/supabase-browser";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [isSignUp, setIsSignUp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: NextAuth integration
-    console.log(isSignUp ? "Sign up" : "Sign in", { email, password, name });
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      if (isSignUp) {
+        // 註冊
+        const { data, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { name },
+          },
+        });
+
+        if (signUpError) {
+          setError(signUpError.message);
+          return;
+        }
+
+        // 在 users 表建立用戶資料（10 點免費額度）
+        if (data.user) {
+          await supabase.from("users").insert({
+            id: data.user.id,
+            email,
+            name,
+            credits: 10,
+            plan: "free",
+          });
+        }
+
+        // 註冊後自動嘗試登入
+        const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (loginData?.session) {
+          router.push("/create");
+          return;
+        }
+
+        setSuccess("註冊成功！如需信箱驗證請查看郵件，或直接用帳密登入。");
+        setIsSignUp(false);
+      } else {
+        // 登入
+        const { data, error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (signInError) {
+          if (signInError.message.includes("Invalid login")) {
+            setError("帳號或密碼錯誤，請重試。");
+          } else if (signInError.message.includes("Email not confirmed")) {
+            setError("請先確認信箱中的驗證郵件。");
+          } else {
+            setError(signInError.message);
+          }
+          return;
+        }
+
+        if (data.session) {
+          router.push("/create");
+        }
+      }
+    } catch (err) {
+      setError("發生未預期的錯誤，請稍後再試。");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    setError(null);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/create`,
+      },
+    });
+    if (error) {
+      setError(error.message);
+      setLoading(false);
+    }
   };
 
   return (
@@ -39,8 +129,25 @@ export default function LoginPage() {
 
         {/* Form */}
         <div className="glass rounded-2xl p-8">
-          {/* Google OAuth */}
-          <button className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-border hover:bg-white/5 transition-colors mb-6">
+          {/* Error / Success messages */}
+          {error && (
+            <div className="flex items-start gap-2 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/30 text-sm mb-6">
+              <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+              <p className="text-red-300">{error}</p>
+            </div>
+          )}
+          {success && (
+            <div className="px-4 py-3 rounded-xl bg-green-500/10 border border-green-500/30 text-sm text-green-300 mb-6">
+              {success}
+            </div>
+          )}
+
+          {/* Google OAuth - 即將推出 */}
+          <button
+            type="button"
+            onClick={() => setError("Google 登入功能即將推出，請先使用 Email 註冊。")}
+            className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-border hover:bg-white/5 transition-colors mb-6 opacity-60"
+          >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
@@ -79,6 +186,7 @@ export default function LoginPage() {
                   placeholder="你的名字"
                   className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:border-accent focus:outline-none text-sm transition-colors"
                   required
+                  disabled={loading}
                 />
               </div>
             )}
@@ -94,6 +202,7 @@ export default function LoginPage() {
                   placeholder="you@example.com"
                   className="w-full pl-10 pr-4 py-3 rounded-xl bg-background border border-border focus:border-accent focus:outline-none text-sm transition-colors"
                   required
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -109,7 +218,8 @@ export default function LoginPage() {
                   placeholder="••••••••"
                   className="w-full pl-10 pr-12 py-3 rounded-xl bg-background border border-border focus:border-accent focus:outline-none text-sm transition-colors"
                   required
-                  minLength={8}
+                  minLength={6}
+                  disabled={loading}
                 />
                 <button
                   type="button"
@@ -121,9 +231,19 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <button type="submit" className="btn-primary w-full flex items-center justify-center gap-2 !mt-6">
-              {isSignUp ? "註冊" : "登入"}
-              <ArrowRight className="w-4 h-4" />
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn-primary w-full flex items-center justify-center gap-2 !mt-6 disabled:opacity-50"
+            >
+              {loading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <>
+                  {isSignUp ? "註冊" : "登入"}
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
             </button>
           </form>
         </div>
@@ -132,7 +252,11 @@ export default function LoginPage() {
         <p className="text-center text-sm text-muted mt-6">
           {isSignUp ? "已有帳號？" : "還沒有帳號？"}{" "}
           <button
-            onClick={() => setIsSignUp(!isSignUp)}
+            onClick={() => {
+              setIsSignUp(!isSignUp);
+              setError(null);
+              setSuccess(null);
+            }}
             className="text-accent-light hover:underline font-medium"
           >
             {isSignUp ? "登入" : "註冊"}

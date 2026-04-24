@@ -1,12 +1,14 @@
-// Test endpoint — uses fal.ai for immediate testing
-// Remove this after RunPod ComfyUI is production-ready
-
 import { NextRequest } from "next/server";
 import { textToImage, sketchToRender, imageToImage, upscaleImage } from "@/lib/fal-engine";
+import { translatePrompt } from "@/lib/translate";
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { functionType, prompt, imageUrl, style, roomType } = body;
+  const { functionType, imageUrl, roomType } = body;
+
+  // Auto-translate Chinese prompts to English
+  const prompt = body.prompt ? await translatePrompt(body.prompt) : body.prompt;
+  const style = body.style ? await translatePrompt(body.style) : body.style;
 
   try {
     let result;
