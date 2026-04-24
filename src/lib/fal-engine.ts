@@ -4,17 +4,14 @@ fal.config({ credentials: process.env.FAL_KEY! });
 
 // Upload data URI to fal.ai CDN and return a public URL
 async function uploadImage(dataUri: string): Promise<string> {
-  // If it's already a regular URL (not data URI), return as-is
   if (!dataUri.startsWith("data:")) return dataUri;
 
-  // Convert data URI to Blob
   const base64 = dataUri.split(",")[1];
   const mimeType = dataUri.split(";")[0].split(":")[1] || "image/jpeg";
   const buffer = Buffer.from(base64, "base64");
   const blob = new Blob([buffer], { type: mimeType });
   const file = new File([blob], "upload.jpg", { type: mimeType });
 
-  // Upload to fal.ai CDN
   const url = await fal.storage.upload(file);
   return url;
 }
@@ -32,32 +29,46 @@ interface FalUpscaleOutput {
   data: { image: { url: string } };
 }
 
-// Sketch to Render — uses Flux General text-to-image with ControlNet depth guidance
+// Sketch to Render — ControlNet depth for structure + optional IP-Adapter for style reference
 export async function sketchToRender(params: {
   imageUrl: string;
   prompt: string;
   style?: string;
+  referenceImageUrl?: string;
 }): Promise<GenerateResult> {
   const uploadedUrl = await uploadImage(params.imageUrl);
-  const fullPrompt = `${params.prompt}${params.style ? `, ${params.style} style` : ""}, photorealistic interior design, ultra realistic materials and textures, volumetric lighting, 8k, professional architectural photography, natural lighting, award winning interior design photo`;
+  const fullPrompt = `${params.prompt}${params.style ? `, ${params.style} style` : ""}, photorealistic interior design, realistic materials and textures, volumetric lighting, 8k, professional architectural photography`;
 
-  // Use text-to-image with ControlNet — sketch provides structure, prompt drives visuals
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const input: Record<string, any> = {
+    prompt: fullPrompt,
+    image_size: "landscape_16_9",
+    num_inference_steps: 28,
+    guidance_scale: 3.5,
+    num_images: 1,
+    controlnets: [
+      {
+        path: "Shakker-Labs/FLUX.1-dev-ControlNet-Depth",
+        control_image_url: uploadedUrl,
+        conditioning_scale: 0.45,
+      },
+    ],
+  };
+
+  // If reference image provided, use IP-Adapter for style guidance
+  if (params.referenceImageUrl) {
+    const refUrl = await uploadImage(params.referenceImageUrl);
+    input.ip_adapters = [
+      {
+        path: "XLabs-AI/flux-ip-adapter",
+        image_url: refUrl,
+        scale: 0.7,
+      },
+    ];
+  }
+
   const result = (await fal.subscribe("fal-ai/flux-general" as any, {
-    input: {
-      prompt: fullPrompt,
-      image_size: "landscape_16_9",
-      num_inference_steps: 28,
-      guidance_scale: 3.5,
-      num_images: 1,
-      controlnets: [
-        {
-          path: "Shakker-Labs/FLUX.1-dev-ControlNet-Depth",
-          control_image_url: uploadedUrl,
-          conditioning_scale: 0.5,
-        },
-      ],
-    },
+    input,
   })) as FalImageOutput;
 
   return {
@@ -66,18 +77,45 @@ export async function sketchToRender(params: {
   };
 }
 
-// Text to Image — uses Flux Schnell (fast) or Flux Dev (quality)
+// Text to Image — with optional reference image via IP-Adapter
 export async function textToImage(params: {
   prompt: string;
   style?: string;
   roomType?: string;
   quality?: "fast" | "quality";
+  referenceImageUrl?: string;
 }): Promise<GenerateResult> {
   const parts = [];
   if (params.roomType) parts.push(params.roomType);
   parts.push(params.prompt);
   if (params.style) parts.push(`${params.style} style`);
-  parts.push("photorealistic interior design, 8k, ultra detailed, professional architectural photography, natural lighting");
+  parts.push("photorealistic interior design, 8k, ultra detailed, professional architectural photography");
+
+  // If reference image is provided, use flux-general with IP-Adapter
+  if (params.referenceImageUrl) {
+    const refUrl = await uploadImage(params.referenceImageUrl);
+    const result = (await fal.subscribe("fal-ai/flux-general" as any, {
+      input: {
+        prompt: parts.join(", "),
+        image_size: "landscape_16_9",
+        num_inference_steps: 28,
+        guidance_scale: 3.5,
+        num_images: 1,
+        ip_adapters: [
+          {
+            path: "XLabs-AI/flux-ip-adapter",
+            image_url: refUrl,
+            scale: 0.7,
+          },
+        ],
+      },
+    })) as FalImageOutput;
+
+    return {
+      imageUrl: result.data.images[0].url,
+      seed: result.data.seed,
+    };
+  }
 
   const model = params.quality === "fast"
     ? "fal-ai/flux/schnell"
@@ -100,21 +138,48 @@ export async function textToImage(params: {
   };
 }
 
-// Image to Image — photo remodel / realistic render
+// Image to Image — photo remodel / realistic render + optional reference
 export async function imageToImage(params: {
   imageUrl: string;
   prompt: string;
   style?: string;
   strength?: number;
+  referenceImageUrl?: string;
 }): Promise<GenerateResult> {
   const uploadedUrl = await uploadImage(params.imageUrl);
   const fullPrompt = `${params.prompt}${params.style ? `, ${params.style} style` : ""}, photorealistic interior design, professional photography`;
+
+  // If reference image, use flux-general with both ControlNet and IP-Adapter
+  if (params.referenceImageUrl) {
+    const refUrl = await uploadImage(params.referenceImageUrl);
+    const result = (await fal.subscribe("fal-ai/flux-general/image-to-image" as any, {
+      input: {
+        image_url: uploadedUrl,
+        prompt: fullPrompt,
+        strength: params.strength ?? 0.7,
+        num_inference_steps: 28,
+        guidance_scale: 3.5,
+        ip_adapters: [
+          {
+            path: "XLabs-AI/flux-ip-adapter",
+            image_url: refUrl,
+            scale: 0.7,
+          },
+        ],
+      },
+    })) as FalImageOutput;
+
+    return {
+      imageUrl: result.data.images[0].url,
+      seed: result.data.seed,
+    };
+  }
 
   const result = (await fal.subscribe("fal-ai/flux/dev/image-to-image" as any, {
     input: {
       image_url: uploadedUrl,
       prompt: fullPrompt,
-      strength: params.strength ?? 0.6,
+      strength: params.strength ?? 0.7,
       num_inference_steps: 28,
       guidance_scale: 3.5,
     },

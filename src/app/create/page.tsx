@@ -76,6 +76,8 @@ function CreatePageInner() {
   const [room, setRoom] = useState("");
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [uploadedFileName, setUploadedFileName] = useState<string>("");
+  const [referenceImage, setReferenceImage] = useState<string | null>(null);
+  const [referenceFileName, setReferenceFileName] = useState<string>("");
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -173,7 +175,12 @@ function CreatePageInner() {
       // imageBase64 for ComfyUI (raw base64), imageUrl for fal.ai (data URI)
       if (selectedFn.needsImage && uploadedImage) {
         requestBody.imageBase64 = dataUrlToBase64(uploadedImage);
-        requestBody.imageUrl = uploadedImage; // data URI for fal.ai fallback
+        requestBody.imageUrl = uploadedImage;
+      }
+
+      // Add reference image if provided
+      if (referenceImage) {
+        requestBody.referenceImageUrl = referenceImage;
       }
 
       // Try the primary generate endpoint first
@@ -468,37 +475,132 @@ function CreatePageInner() {
 
           {/* Uploaded Image Preview */}
           {!generating && selectedFn.needsImage && uploadedImage && !result && (
-            <div className="relative glass rounded-2xl overflow-hidden">
-              <img
-                src={uploadedImage}
-                alt="Uploaded"
-                className="w-full h-[400px] object-contain bg-black/20"
-              />
-              <div className="absolute top-3 left-3 px-3 py-1.5 rounded-lg glass text-xs text-muted">
-                {uploadedFileName || "已上傳圖片"}
+            <div className="space-y-3">
+              <div className="relative glass rounded-2xl overflow-hidden">
+                <img
+                  src={uploadedImage}
+                  alt="Uploaded"
+                  className="w-full h-[300px] object-contain bg-black/20"
+                />
+                <div className="absolute top-3 left-3 px-3 py-1.5 rounded-lg glass text-xs text-muted">
+                  {uploadedFileName || "原圖"}
+                </div>
+                <button
+                  onClick={() => {
+                    setUploadedImage(null);
+                    setUploadedFileName("");
+                    setResult(null);
+                    setError(null);
+                  }}
+                  className="absolute top-3 right-3 p-2 rounded-lg glass hover:bg-white/10"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
-              <button
-                onClick={() => {
-                  setUploadedImage(null);
-                  setUploadedFileName("");
-                  setResult(null);
-                  setError(null);
-                }}
-                className="absolute top-3 right-3 p-2 rounded-lg glass hover:bg-white/10"
-              >
-                <X className="w-4 h-4" />
-              </button>
+
+              {/* Reference Image */}
+              {!referenceImage ? (
+                <div
+                  className="glass rounded-xl border border-dashed border-border hover:border-accent/50 transition-colors h-[100px] flex items-center justify-center cursor-pointer gap-3"
+                  onClick={() => document.getElementById("ref-file-input")?.click()}
+                >
+                  <ImageIcon className="w-5 h-5 text-muted" />
+                  <div>
+                    <p className="text-sm text-muted">新增參考圖（選填）</p>
+                    <p className="text-xs text-muted">AI 會參考這張圖的風格來生成</p>
+                  </div>
+                  <input
+                    id="ref-file-input"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setReferenceFileName(file.name);
+                      const reader = new FileReader();
+                      reader.onload = (ev) => setReferenceImage(ev.target?.result as string);
+                      reader.readAsDataURL(file);
+                    }}
+                    className="hidden"
+                  />
+                </div>
+              ) : (
+                <div className="relative glass rounded-xl overflow-hidden flex items-center gap-3 p-2">
+                  <img
+                    src={referenceImage}
+                    alt="Reference"
+                    className="w-20 h-16 object-cover rounded-lg"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium truncate">參考圖</p>
+                    <p className="text-xs text-muted truncate">{referenceFileName}</p>
+                  </div>
+                  <button
+                    onClick={() => { setReferenceImage(null); setReferenceFileName(""); }}
+                    className="p-1.5 rounded-lg hover:bg-white/10 shrink-0"
+                  >
+                    <X className="w-4 h-4 text-muted" />
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
           {/* Text-only mode */}
           {!generating && !selectedFn.needsImage && !result && (
-            <div className="glass rounded-2xl h-[400px] flex items-center justify-center">
-              <div className="text-center">
-                <Type className="w-16 h-16 text-accent-light/30 mx-auto mb-4" />
-                <p className="text-muted">在提示詞面板輸入你的描述</p>
-                <p className="text-xs text-muted mt-1">AI 將根據文字生成設計</p>
+            <div className="space-y-3">
+              <div className="glass rounded-2xl h-[280px] flex items-center justify-center">
+                <div className="text-center">
+                  <Type className="w-16 h-16 text-accent-light/30 mx-auto mb-4" />
+                  <p className="text-muted">在提示詞面板輸入你的描述</p>
+                  <p className="text-xs text-muted mt-1">AI 將根據文字生成設計</p>
+                </div>
               </div>
+              {/* Reference Image for text2img */}
+              {!referenceImage ? (
+                <div
+                  className="glass rounded-xl border border-dashed border-border hover:border-accent/50 transition-colors h-[100px] flex items-center justify-center cursor-pointer gap-3"
+                  onClick={() => document.getElementById("ref-file-input-text")?.click()}
+                >
+                  <ImageIcon className="w-5 h-5 text-muted" />
+                  <div>
+                    <p className="text-sm text-muted">新增參考圖（選填）</p>
+                    <p className="text-xs text-muted">AI 會參考這張圖的風格來生成</p>
+                  </div>
+                  <input
+                    id="ref-file-input-text"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setReferenceFileName(file.name);
+                      const reader = new FileReader();
+                      reader.onload = (ev) => setReferenceImage(ev.target?.result as string);
+                      reader.readAsDataURL(file);
+                    }}
+                    className="hidden"
+                  />
+                </div>
+              ) : (
+                <div className="relative glass rounded-xl overflow-hidden flex items-center gap-3 p-2">
+                  <img
+                    src={referenceImage}
+                    alt="Reference"
+                    className="w-20 h-16 object-cover rounded-lg"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium truncate">參考圖</p>
+                    <p className="text-xs text-muted truncate">{referenceFileName}</p>
+                  </div>
+                  <button
+                    onClick={() => { setReferenceImage(null); setReferenceFileName(""); }}
+                    className="p-1.5 rounded-lg hover:bg-white/10 shrink-0"
+                  >
+                    <X className="w-4 h-4 text-muted" />
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
