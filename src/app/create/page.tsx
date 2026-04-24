@@ -80,6 +80,7 @@ function CreatePageInner() {
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showAssistant, setShowAssistant] = useState(false);
+  const [imageCount, setImageCount] = useState(1);
   const [creditsRemaining, setCreditsRemaining] = useState<number | null>(null);
   const [progressIdx, setProgressIdx] = useState(0);
   const [generationTime, setGenerationTime] = useState<number | null>(null);
@@ -532,6 +533,29 @@ function CreatePageInner() {
           )}
 
           {/* Generate Button */}
+          {/* Image Count Selector */}
+          {!result && (
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs text-muted">生成張數</span>
+              <div className="flex items-center gap-1">
+                {[1, 2, 4].map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => setImageCount(n)}
+                    disabled={generating}
+                    className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+                      imageCount === n
+                        ? "bg-accent/10 border border-accent/30 text-accent-light"
+                        : "glass text-muted hover:text-foreground"
+                    }`}
+                  >
+                    {n} 張
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {!result && (
             <button
               onClick={generating ? handleCancel : handleGenerate}
@@ -550,7 +574,7 @@ function CreatePageInner() {
               ) : (
                 <>
                   <Sparkles className="w-4 h-4" />
-                  生成（{selectedFn.credits} 點）
+                  生成（{selectedFn.credits * imageCount} 點 / {imageCount} 張）
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
