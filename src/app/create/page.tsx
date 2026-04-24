@@ -19,44 +19,44 @@ import {
 } from "lucide-react";
 
 const FUNCTIONS = [
-  { id: "sketch2render", label: "Sketch to Render", icon: Upload, credits: 2, needsImage: true },
-  { id: "realistic_render", label: "Realistic Render", icon: ImageIcon, credits: 2, needsImage: true },
-  { id: "photo_remodel", label: "Photo Remodel", icon: Palette, credits: 3, needsImage: true },
-  { id: "style_transfer", label: "Style Transfer", icon: Sparkles, credits: 2, needsImage: true },
-  { id: "upscale", label: "4K Upscale", icon: Zap, credits: 1, needsImage: true },
-  { id: "text2img", label: "Text to Design", icon: Type, credits: 1, needsImage: false },
+  { id: "sketch2render", label: "草圖轉渲染", icon: Upload, credits: 2, needsImage: true },
+  { id: "realistic_render", label: "寫實渲染", icon: ImageIcon, credits: 2, needsImage: true },
+  { id: "photo_remodel", label: "照片改造", icon: Palette, credits: 3, needsImage: true },
+  { id: "style_transfer", label: "風格轉換", icon: Sparkles, credits: 2, needsImage: true },
+  { id: "upscale", label: "4K 放大", icon: Zap, credits: 1, needsImage: true },
+  { id: "text2img", label: "文字生圖", icon: Type, credits: 1, needsImage: false },
 ];
 
 const STYLES = [
-  "Modern Minimalist",
-  "Wabi-sabi",
-  "Industrial",
-  "Scandinavian",
-  "Japanese Zen",
-  "Art Deco",
-  "Mid-Century Modern",
-  "Contemporary Luxury",
+  "現代極簡",
+  "侘寂",
+  "工業風",
+  "北歐風",
+  "日式禪風",
+  "裝飾藝術",
+  "中世紀現代",
+  "當代奢華",
 ];
 
 const ROOMS = [
-  "Living Room",
-  "Bedroom",
-  "Kitchen",
-  "Bathroom",
-  "Office",
-  "Dining Room",
-  "Lobby",
-  "Commercial Space",
+  "客廳",
+  "臥室",
+  "廚房",
+  "浴室",
+  "辦公室",
+  "餐廳",
+  "大廳",
+  "商業空間",
 ];
 
 const PROGRESS_MESSAGES = [
-  "Analyzing your input...",
-  "Building AI workflow...",
-  "Generating design concepts...",
-  "Rendering photorealistic details...",
-  "Applying style refinements...",
-  "Enhancing lighting and textures...",
-  "Finalizing high-resolution output...",
+  "分析你的輸入...",
+  "建構 AI 工作流程...",
+  "生成設計概念...",
+  "渲染寫實細節...",
+  "套用風格調整...",
+  "強化光影與材質...",
+  "完成高解析度輸出...",
 ];
 
 // Extract the raw base64 data from a data URL (strip the data:image/...;base64, prefix)
@@ -129,11 +129,11 @@ export default function CreatePage() {
   const handleGenerate = async () => {
     // Validate inputs
     if (selectedFn.needsImage && !uploadedImage) {
-      setError("Please upload an image first.");
+      setError("請先上傳圖片。");
       return;
     }
     if (selectedFn.id === "text2img" && !prompt.trim()) {
-      setError("Please enter a description for the design you want to create.");
+      setError("請輸入設計描述...");
       return;
     }
 
@@ -213,12 +213,12 @@ export default function CreatePage() {
         // Handle specific error codes
         if (response.status === 402) {
           setError(
-            `Insufficient credits. This function requires ${data.required || selectedFn.credits} credits. Please purchase more credits.`
+            `點數不足。此功能需要 ${data.required || selectedFn.credits} 點。請購買更多點數。`
           );
         } else if (response.status === 400) {
-          setError(data.error || "Invalid request. Please check your inputs.");
+          setError(data.error || "無效的請求，請檢查你的輸入。");
         } else {
-          setError(data.error || "Generation failed. Please try again.");
+          setError(data.error || "生成失敗，請重試。");
         }
         return;
       }
@@ -226,7 +226,7 @@ export default function CreatePage() {
       // Success
       const outputUrl = data.outputUrl;
       if (!outputUrl) {
-        setError("No image was returned. Please try again.");
+        setError("未回傳圖片，請重試。");
         return;
       }
 
@@ -254,8 +254,8 @@ export default function CreatePage() {
       console.error("Generation error:", err);
       setError(
         err instanceof Error
-          ? `Generation failed: ${err.message}`
-          : "An unexpected error occurred. Please try again."
+          ? `生成失敗：${err.message}`
+          : "發生未預期的錯誤，請重試。"
       );
     } finally {
       setGenerating(false);
@@ -318,13 +318,13 @@ export default function CreatePage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold">Create</h1>
-          <p className="text-sm text-muted mt-1">Transform your designs with AI</p>
+          <h1 className="text-2xl font-bold">創作</h1>
+          <p className="text-sm text-muted mt-1">用 AI 轉換你的設計</p>
         </div>
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg glass text-sm">
           <Zap className="w-4 h-4 text-yellow-500" />
           <span>
-            {creditsRemaining !== null ? creditsRemaining : 10} credits
+            {creditsRemaining !== null ? creditsRemaining : 10} 點
           </span>
         </div>
       </div>
@@ -333,7 +333,7 @@ export default function CreatePage() {
         {/* Left Panel - Function Selection */}
         <div className="space-y-2">
           <h2 className="text-xs font-medium text-muted uppercase tracking-wider px-1 mb-3">
-            AI Function
+            AI 功能
           </h2>
           {FUNCTIONS.map((fn) => (
             <button
@@ -402,7 +402,7 @@ export default function CreatePage() {
                   {PROGRESS_MESSAGES[progressIdx]}
                 </p>
                 <p className="text-xs text-muted">
-                  This usually takes 15-60 seconds
+                  通常需要 15-60 秒
                 </p>
 
                 {/* Progress bar */}
@@ -420,7 +420,7 @@ export default function CreatePage() {
                   onClick={handleCancel}
                   className="mt-6 px-4 py-2 text-xs text-muted hover:text-foreground transition-colors"
                 >
-                  Cancel
+                  取消
                 </button>
               </div>
             </div>
@@ -435,8 +435,8 @@ export default function CreatePage() {
               onClick={() => document.getElementById("file-input")?.click()}
             >
               <Upload className="w-12 h-12 text-muted mb-4" />
-              <p className="text-muted mb-2">Drag & drop your image here</p>
-              <p className="text-xs text-muted">or click to browse (PNG, JPG, WebP)</p>
+              <p className="text-muted mb-2">拖放圖片到這裡</p>
+              <p className="text-xs text-muted">或點擊瀏覽（PNG、JPG、WebP）</p>
               <input
                 id="file-input"
                 type="file"
@@ -456,7 +456,7 @@ export default function CreatePage() {
                 className="w-full h-[400px] object-contain bg-black/20"
               />
               <div className="absolute top-3 left-3 px-3 py-1.5 rounded-lg glass text-xs text-muted">
-                {uploadedFileName || "Uploaded image"}
+                {uploadedFileName || "已上傳圖片"}
               </div>
               <button
                 onClick={() => {
@@ -477,8 +477,8 @@ export default function CreatePage() {
             <div className="glass rounded-2xl h-[400px] flex items-center justify-center">
               <div className="text-center">
                 <Type className="w-16 h-16 text-accent-light/30 mx-auto mb-4" />
-                <p className="text-muted">Enter your description in the prompt panel</p>
-                <p className="text-xs text-muted mt-1">AI will generate a design from text</p>
+                <p className="text-muted">在提示詞面板輸入你的描述</p>
+                <p className="text-xs text-muted mt-1">AI 將根據文字生成設計</p>
               </div>
             </div>
           )}
@@ -495,11 +495,11 @@ export default function CreatePage() {
               <div className="absolute top-3 left-3 flex items-center gap-2 px-3 py-1.5 rounded-lg glass text-xs">
                 <CheckCircle2 className="w-4 h-4 text-green-400" />
                 <span className="text-green-300">
-                  Generated{generationTime ? ` in ${generationTime}s` : ""}
+                  生成耗時{generationTime ? ` ${generationTime} 秒` : ""}
                 </span>
                 {creditsRemaining !== null && (
                   <span className="text-muted ml-1">
-                    | {creditsRemaining} credits left
+                    | 剩餘 {creditsRemaining} 點
                   </span>
                 )}
               </div>
@@ -508,18 +508,18 @@ export default function CreatePage() {
                 <button
                   onClick={handleDownload}
                   className="flex items-center gap-2 px-3 py-2 rounded-lg glass hover:bg-white/10 text-sm transition-colors"
-                  title="Download"
+                  title="下載"
                 >
                   <Download className="w-4 h-4" />
-                  <span className="hidden sm:inline">Download</span>
+                  <span className="hidden sm:inline">下載</span>
                 </button>
                 <button
                   onClick={handleReset}
                   className="flex items-center gap-2 px-3 py-2 rounded-lg glass hover:bg-white/10 text-sm transition-colors"
-                  title="Generate again"
+                  title="重新生成"
                 >
                   <RotateCcw className="w-4 h-4" />
-                  <span className="hidden sm:inline">New</span>
+                  <span className="hidden sm:inline">新增</span>
                 </button>
               </div>
             </div>
@@ -539,12 +539,12 @@ export default function CreatePage() {
               {generating ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Generating... Click to cancel
+                  生成中... 點擊取消
                 </>
               ) : (
                 <>
                   <Sparkles className="w-4 h-4" />
-                  Generate ({selectedFn.credits} credits)
+                  生成（{selectedFn.credits} 點）
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
@@ -564,14 +564,14 @@ export default function CreatePage() {
                 className="btn-primary flex-1 flex items-center justify-center gap-2"
               >
                 <RotateCcw className="w-4 h-4" />
-                Regenerate ({selectedFn.credits} credits)
+                重新生成（{selectedFn.credits} 點）
               </button>
               <button
                 onClick={handleDownload}
                 className="btn-secondary flex-1 flex items-center justify-center gap-2"
               >
                 <Download className="w-4 h-4" />
-                Download Result
+                下載結果
               </button>
             </div>
           )}
@@ -582,12 +582,12 @@ export default function CreatePage() {
           {/* Prompt */}
           <div>
             <h2 className="text-xs font-medium text-muted uppercase tracking-wider px-1 mb-3">
-              Prompt
+              提示詞
             </h2>
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Describe the design you want to create..."
+              placeholder="描述你想要的設計..."
               rows={6}
               disabled={generating}
               className="w-full px-4 py-3 rounded-xl bg-card border border-border focus:border-accent focus:outline-none text-sm resize-none transition-colors disabled:opacity-50"
@@ -597,7 +597,7 @@ export default function CreatePage() {
           {/* Style */}
           <div>
             <h2 className="text-xs font-medium text-muted uppercase tracking-wider px-1 mb-3">
-              Style
+              風格
             </h2>
             <div className="relative">
               <select
@@ -606,7 +606,7 @@ export default function CreatePage() {
                 disabled={generating}
                 className="w-full px-4 py-3 rounded-xl bg-card border border-border focus:border-accent focus:outline-none text-sm appearance-none cursor-pointer transition-colors disabled:opacity-50"
               >
-                <option value="">Select a style...</option>
+                <option value="">選擇風格...</option>
                 {STYLES.map((s) => (
                   <option key={s} value={s}>{s}</option>
                 ))}
@@ -618,7 +618,7 @@ export default function CreatePage() {
           {/* Room Type */}
           <div>
             <h2 className="text-xs font-medium text-muted uppercase tracking-wider px-1 mb-3">
-              Room Type
+              空間類型
             </h2>
             <div className="grid grid-cols-2 gap-2">
               {ROOMS.map((r) => (
@@ -641,13 +641,13 @@ export default function CreatePage() {
           {/* Quick Prompts */}
           <div>
             <h2 className="text-xs font-medium text-muted uppercase tracking-wider px-1 mb-3">
-              Quick Prompts
+              快速提示詞
             </h2>
             <div className="space-y-2">
               {[
-                "Modern minimalist living room, natural light, white oak floors",
-                "Luxury bathroom, marble walls, freestanding tub, warm lighting",
-                "Open kitchen with island, pendant lights, contemporary style",
+                "現代極簡客廳，自然採光，白橡木地板",
+                "奢華浴室，大理石牆面，獨立浴缸，暖色燈光",
+                "開放式廚房搭配中島，吊燈，當代風格",
               ].map((qp, i) => (
                 <button
                   key={i}

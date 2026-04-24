@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Search, Filter, Heart, Eye, Sparkles } from "lucide-react";
 
-const CATEGORIES = ["All", "Interior", "Architecture", "Landscape"];
+const CATEGORIES = ["全部", "室內設計", "建築", "景觀"];
 
 const MOCK_GALLERY = Array.from({ length: 12 }, (_, i) => ({
   id: i + 1,
@@ -35,15 +35,15 @@ const MOCK_GALLERY = Array.from({ length: 12 }, (_, i) => ({
 }));
 
 export default function GalleryPage() {
-  const [category, setCategory] = useState("All");
+  const [category, setCategory] = useState("全部");
   const [search, setSearch] = useState("");
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       {/* Header */}
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold mb-4">Gallery</h1>
-        <p className="text-muted text-lg">Explore AI-generated designs from the community</p>
+        <h1 className="text-4xl font-bold mb-4">作品展示</h1>
+        <p className="text-muted text-lg">探索社群的 AI 生成設計</p>
       </div>
 
       {/* Filters */}
@@ -54,7 +54,7 @@ export default function GalleryPage() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search designs..."
+            placeholder="搜尋設計..."
             className="w-full pl-10 pr-4 py-3 rounded-xl bg-card border border-border focus:border-accent focus:outline-none text-sm transition-colors"
           />
         </div>

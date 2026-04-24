@@ -6,9 +6,9 @@ import { useState } from "react";
 import { Sparkles, Menu, X, Zap } from "lucide-react";
 
 const NAV_LINKS = [
-  { href: "/create", label: "Create" },
-  { href: "/gallery", label: "Gallery" },
-  { href: "/pricing", label: "Pricing" },
+  { href: "/create", label: "開始創作" },
+  { href: "/gallery", label: "作品展示" },
+  { href: "/pricing", label: "方案價格" },
 ];
 
 export function Navbar() {
@@ -55,10 +55,10 @@ export function Navbar() {
               }`}
             >
               <Zap className="w-4 h-4 text-warning" />
-              <span>10 credits</span>
+              <span>10 點數</span>
             </Link>
             <Link href="/login" className="btn-primary text-sm !px-4 !py-2">
-              Sign In
+              登入
             </Link>
           </div>
 
@@ -96,14 +96,14 @@ export function Navbar() {
               className="flex items-center gap-1.5 px-4 py-2 text-sm text-muted"
             >
               <Zap className="w-4 h-4 text-warning" />
-              10 credits
+              10 點數
             </Link>
             <Link
               href="/login"
               onClick={() => setMobileOpen(false)}
               className="block btn-primary text-sm text-center !px-4 !py-2"
             >
-              Sign In
+              登入
             </Link>
           </div>
         </div>

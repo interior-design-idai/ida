@@ -28,12 +28,12 @@ export default function LoginPage() {
             <Sparkles className="w-7 h-7 text-white" />
           </div>
           <h1 className="text-2xl font-bold">
-            {isSignUp ? "Create Account" : "Welcome Back"}
+            {isSignUp ? "建立帳號" : "歡迎回來"}
           </h1>
           <p className="text-muted mt-2">
             {isSignUp
-              ? "Start creating with 10 free credits"
-              : "Sign in to your IDA account"}
+              ? "開始創作，獲得 10 點免費額度"
+              : "登入你的 IDA 帳號"}
           </p>
         </div>
 
@@ -59,24 +59,24 @@ export default function LoginPage() {
                 fill="#EA4335"
               />
             </svg>
-            <span className="text-sm font-medium">Continue with Google</span>
+            <span className="text-sm font-medium">使用 Google 繼續</span>
           </button>
 
           <div className="flex items-center gap-4 mb-6">
             <div className="flex-1 h-px bg-border" />
-            <span className="text-xs text-muted uppercase">or</span>
+            <span className="text-xs text-muted uppercase">或</span>
             <div className="flex-1 h-px bg-border" />
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {isSignUp && (
               <div>
-                <label className="block text-sm font-medium mb-1.5">Name</label>
+                <label className="block text-sm font-medium mb-1.5">姓名</label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Your name"
+                  placeholder="你的名字"
                   className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:border-accent focus:outline-none text-sm transition-colors"
                   required
                 />
@@ -84,7 +84,7 @@ export default function LoginPage() {
             )}
 
             <div>
-              <label className="block text-sm font-medium mb-1.5">Email</label>
+              <label className="block text-sm font-medium mb-1.5">電子郵件</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
                 <input
@@ -99,7 +99,7 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1.5">Password</label>
+              <label className="block text-sm font-medium mb-1.5">密碼</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
                 <input
@@ -122,7 +122,7 @@ export default function LoginPage() {
             </div>
 
             <button type="submit" className="btn-primary w-full flex items-center justify-center gap-2 !mt-6">
-              {isSignUp ? "Create Account" : "Sign In"}
+              {isSignUp ? "註冊" : "登入"}
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
@@ -130,19 +130,19 @@ export default function LoginPage() {
 
         {/* Toggle */}
         <p className="text-center text-sm text-muted mt-6">
-          {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
+          {isSignUp ? "已有帳號？" : "還沒有帳號？"}{" "}
           <button
             onClick={() => setIsSignUp(!isSignUp)}
             className="text-accent-light hover:underline font-medium"
           >
-            {isSignUp ? "Sign In" : "Sign Up"}
+            {isSignUp ? "登入" : "註冊"}
           </button>
         </p>
 
         {/* Back to home */}
         <p className="text-center mt-4">
           <Link href="/" className="text-sm text-muted hover:text-foreground transition-colors">
-            &larr; Back to home
+            &larr; 返回首頁
           </Link>
         </p>
       </div>

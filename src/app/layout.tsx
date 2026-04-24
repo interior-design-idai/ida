@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "IDA — AI Render Platform",
-  description: "Transform sketches into photorealistic renders with AI. The first AI rendering platform for interior design.",
-  keywords: ["AI rendering", "interior design", "architecture", "sketch to render", "AI design"],
+  title: "IDA — AI 渲染平台",
+  description: "用 AI 將草圖轉化為寫實渲染圖。專為室內設計與建築打造的 AI 渲染平台。",
+  keywords: ["AI 渲染", "室內設計", "建築", "草圖轉渲染", "AI 設計"],
 };
 
 export default function RootLayout({
