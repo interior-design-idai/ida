@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Upload,
   Image as ImageIcon,
@@ -16,7 +17,9 @@ import {
   AlertCircle,
   CheckCircle2,
   Loader2,
+  Wand2,
 } from "lucide-react";
+import { PromptAssistant } from "@/components/PromptAssistant";
 
 const FUNCTIONS = [
   { id: "sketch2render", label: "草圖轉渲染", icon: Upload, credits: 2, needsImage: true },
@@ -65,9 +68,10 @@ function dataUrlToBase64(dataUrl: string): string {
   return idx >= 0 ? dataUrl.substring(idx + 1) : dataUrl;
 }
 
-export default function CreatePage() {
+function CreatePageInner() {
+  const searchParams = useSearchParams();
   const [selectedFn, setSelectedFn] = useState(FUNCTIONS[0]);
-  const [prompt, setPrompt] = useState("");
+  const [prompt, setPrompt] = useState(searchParams.get("prompt") || "");
   const [style, setStyle] = useState("");
   const [room, setRoom] = useState("");
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -75,6 +79,7 @@ export default function CreatePage() {
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showAssistant, setShowAssistant] = useState(false);
   const [creditsRemaining, setCreditsRemaining] = useState<number | null>(null);
   const [progressIdx, setProgressIdx] = useState(0);
   const [generationTime, setGenerationTime] = useState<number | null>(null);
@@ -315,6 +320,7 @@ export default function CreatePage() {
     (selectedFn.needsImage ? !!uploadedImage : !!prompt.trim());
 
   return (
+  <>
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex items-center justify-between mb-8">
         <div>
@@ -581,9 +587,18 @@ export default function CreatePage() {
         <div className="space-y-6">
           {/* Prompt */}
           <div>
-            <h2 className="text-xs font-medium text-muted uppercase tracking-wider px-1 mb-3">
-              提示詞
-            </h2>
+            <div className="flex items-center justify-between px-1 mb-3">
+              <h2 className="text-xs font-medium text-muted uppercase tracking-wider">
+                提示詞
+              </h2>
+              <button
+                onClick={() => setShowAssistant(true)}
+                className="flex items-center gap-1 text-xs text-accent-light hover:text-accent transition-colors"
+              >
+                <Wand2 className="w-3 h-3" />
+                提示詞助手
+              </button>
+            </div>
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
@@ -663,5 +678,20 @@ export default function CreatePage() {
         </div>
       </div>
     </div>
+
+    <PromptAssistant
+      isOpen={showAssistant}
+      onClose={() => setShowAssistant(false)}
+      onSelect={(p) => setPrompt(p)}
+    />
+  </>
+  );
+}
+
+export default function CreatePage() {
+  return (
+    <Suspense>
+      <CreatePageInner />
+    </Suspense>
   );
 }
