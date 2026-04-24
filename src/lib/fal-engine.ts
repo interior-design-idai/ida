@@ -39,16 +39,16 @@ export async function sketchToRender(params: {
   style?: string;
 }): Promise<GenerateResult> {
   const uploadedUrl = await uploadImage(params.imageUrl);
-  const fullPrompt = `${params.prompt}${params.style ? `, ${params.style} style` : ""}, photorealistic interior design, 8k, professional photography, natural lighting`;
+  const fullPrompt = `Transform this architectural sketch into a photorealistic render: ${params.prompt}${params.style ? `, ${params.style} style` : ""}, photorealistic interior design, ultra realistic materials and textures, volumetric lighting, ray tracing, 8k, professional architectural photography, natural lighting, award winning interior design photo`;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const result = (await fal.subscribe("fal-ai/flux/dev/image-to-image" as any, {
     input: {
       image_url: uploadedUrl,
       prompt: fullPrompt,
-      strength: 0.85,
-      num_inference_steps: 28,
-      guidance_scale: 3.5,
+      strength: 0.95,
+      num_inference_steps: 30,
+      guidance_scale: 4.0,
     },
   })) as FalImageOutput;
 
