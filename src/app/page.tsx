@@ -41,9 +41,18 @@ const FEATURES = [
 ];
 
 const SHOWCASE = [
-  { before: "草圖", after: "寫實渲染", gradient: "from-blue-500 to-cyan-500" },
-  { before: "3D 線稿", after: "寫實室內", gradient: "from-purple-500 to-pink-500" },
-  { before: "照片", after: "重新設計空間", gradient: "from-amber-500 to-orange-500" },
+  { before: "草圖", after: "寫實渲染", image: "/showcase-1.jpg" },
+  { before: "3D 線稿", after: "寫實室內", image: "/showcase-2.jpg" },
+  { before: "照片", after: "重新設計空間", image: "/showcase-3.jpg" },
+];
+
+const FEATURE_IMAGES = [
+  "/feature-1.jpg",
+  "/feature-2.jpg",
+  "/feature-3.jpg",
+  "/feature-4.jpg",
+  "/feature-5.jpg",
+  "/feature-6.jpg",
 ];
 
 export default function Home() {
@@ -111,7 +120,9 @@ export default function Home() {
         <div className="grid md:grid-cols-3 gap-6">
           {SHOWCASE.map((item, i) => (
             <div key={i} className="glass rounded-2xl overflow-hidden group hover:border-accent/50 transition-all">
-              <div className={`h-48 bg-gradient-to-br ${item.gradient} opacity-20 group-hover:opacity-30 transition-opacity`} />
+              <div className="h-48 overflow-hidden">
+                <img src={item.image} alt={item.after} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+              </div>
               <div className="p-6">
                 <div className="flex items-center gap-3 mb-2">
                   <span className="text-sm text-muted">{item.before}</span>
@@ -134,16 +145,23 @@ export default function Home() {
           {FEATURES.map((feature, i) => (
             <div
               key={i}
-              className="glass rounded-2xl p-6 group hover:border-accent/50 transition-all"
+              className="glass rounded-2xl overflow-hidden group hover:border-accent/50 transition-all"
             >
-              <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center mb-4 group-hover:bg-accent/20 transition-colors">
-                <feature.icon className="w-6 h-6 text-accent-light" />
+              <div className="h-40 overflow-hidden">
+                <img src={FEATURE_IMAGES[i]} alt={feature.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
               </div>
-              <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
-              <p className="text-sm text-muted mb-4 leading-relaxed">{feature.desc}</p>
-              <div className="flex items-center gap-1 text-xs text-accent-light">
-                <Zap className="w-3 h-3" />
-                {feature.credits} 點
+              <div className="p-6">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center shrink-0 group-hover:bg-accent/20 transition-colors">
+                    <feature.icon className="w-5 h-5 text-accent-light" />
+                  </div>
+                  <h3 className="text-lg font-semibold">{feature.title}</h3>
+                </div>
+                <p className="text-sm text-muted mb-4 leading-relaxed">{feature.desc}</p>
+                <div className="flex items-center gap-1 text-xs text-accent-light">
+                  <Zap className="w-3 h-3" />
+                  {feature.credits} 點
+                </div>
               </div>
             </div>
           ))}
