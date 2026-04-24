@@ -72,7 +72,7 @@ export default function Home() {
 
             <h1 className="text-5xl sm:text-7xl font-bold tracking-tight mb-6">
               It&apos;s just{" "}
-              <span className="gradient-text">IDA</span>
+              <span className="gradient-text">IDAI</span>
               <span className="gradient-text">.</span>
             </h1>
 
@@ -193,10 +193,10 @@ export default function Home() {
               <div className="w-6 h-6 rounded-md bg-gradient-to-br from-accent to-purple-500 flex items-center justify-center">
                 <Sparkles className="w-3 h-3 text-white" />
               </div>
-              <span className="font-semibold">IDA</span>
+              <span className="font-semibold">IDAI</span>
               <span className="text-sm text-muted">AI 渲染平台</span>
             </div>
-            <p className="text-sm text-muted">&copy; 2026 IDA. 保留所有權利。</p>
+            <p className="text-sm text-muted">&copy; 2026 IDAI. 保留所有權利。</p>
           </div>
         </div>
       </footer>

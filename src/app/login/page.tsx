@@ -33,7 +33,7 @@ export default function LoginPage() {
           <p className="text-muted mt-2">
             {isSignUp
               ? "開始創作，獲得 10 點免費額度"
-              : "登入你的 IDA 帳號"}
+              : "登入你的 IDAI 帳號"}
           </p>
         </div>
 

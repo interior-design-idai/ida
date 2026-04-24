@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "IDA — AI 渲染平台",
+  title: "IDAI — AI 渲染平台",
   description: "用 AI 將草圖轉化為寫實渲染圖。專為室內設計與建築打造的 AI 渲染平台。",
   keywords: ["AI 渲染", "室內設計", "建築", "草圖轉渲染", "AI 設計"],
 };
