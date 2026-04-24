@@ -1,9 +1,23 @@
-// fal.ai engine — for immediate testing while RunPod ComfyUI is being set up
-// Once RunPod is ready, switch to comfyui.ts in the generate API route
-
 import { fal } from "@fal-ai/client";
 
 fal.config({ credentials: process.env.FAL_KEY! });
+
+// Upload data URI to fal.ai CDN and return a public URL
+async function uploadImage(dataUri: string): Promise<string> {
+  // If it's already a regular URL (not data URI), return as-is
+  if (!dataUri.startsWith("data:")) return dataUri;
+
+  // Convert data URI to Blob
+  const base64 = dataUri.split(",")[1];
+  const mimeType = dataUri.split(";")[0].split(":")[1] || "image/jpeg";
+  const buffer = Buffer.from(base64, "base64");
+  const blob = new Blob([buffer], { type: mimeType });
+  const file = new File([blob], "upload.jpg", { type: mimeType });
+
+  // Upload to fal.ai CDN
+  const url = await fal.storage.upload(file);
+  return url;
+}
 
 export interface GenerateResult {
   imageUrl: string;
@@ -18,20 +32,21 @@ interface FalUpscaleOutput {
   data: { image: { url: string } };
 }
 
-// Sketch to Render — uses Flux + ControlNet Canny
+// Sketch to Render — uses Flux image-to-image with high strength
 export async function sketchToRender(params: {
   imageUrl: string;
   prompt: string;
   style?: string;
 }): Promise<GenerateResult> {
+  const uploadedUrl = await uploadImage(params.imageUrl);
   const fullPrompt = `${params.prompt}${params.style ? `, ${params.style} style` : ""}, photorealistic interior design, 8k, professional photography, natural lighting`;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const result = (await fal.subscribe("fal-ai/flux/dev/image-to-image" as any, {
     input: {
-      image_url: params.imageUrl,
+      image_url: uploadedUrl,
       prompt: fullPrompt,
-      strength: 0.75,
+      strength: 0.85,
       num_inference_steps: 28,
       guidance_scale: 3.5,
     },
@@ -84,11 +99,12 @@ export async function imageToImage(params: {
   style?: string;
   strength?: number;
 }): Promise<GenerateResult> {
+  const uploadedUrl = await uploadImage(params.imageUrl);
   const fullPrompt = `${params.prompt}${params.style ? `, ${params.style} style` : ""}, photorealistic interior design, professional photography`;
 
   const result = (await fal.subscribe("fal-ai/flux/dev/image-to-image" as any, {
     input: {
-      image_url: params.imageUrl,
+      image_url: uploadedUrl,
       prompt: fullPrompt,
       strength: params.strength ?? 0.6,
       num_inference_steps: 28,
@@ -107,9 +123,10 @@ export async function upscaleImage(params: {
   imageUrl: string;
   scale?: number;
 }): Promise<GenerateResult> {
+  const uploadedUrl = await uploadImage(params.imageUrl);
   const result = (await fal.subscribe("fal-ai/clarity-upscaler" as any, {
     input: {
-      image_url: params.imageUrl,
+      image_url: uploadedUrl,
       scale: params.scale ?? 4,
       prompt: "photorealistic interior design, high quality, detailed",
       creativity: 0.2,
