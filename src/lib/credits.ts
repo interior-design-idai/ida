@@ -1,4 +1,11 @@
-import { CREDIT_COSTS } from "./replicate";
+export const CREDIT_COSTS: Record<string, number> = {
+  sketch2render: 2,
+  realistic_render: 2,
+  photo_remodel: 3,
+  style_transfer: 2,
+  upscale: 1,
+  text2img: 1,
+};
 
 export const PRICING = {
   packs: [
