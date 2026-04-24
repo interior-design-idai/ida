@@ -324,7 +324,7 @@ export default function CreatePage() {
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg glass text-sm">
           <Zap className="w-4 h-4 text-yellow-500" />
           <span>
-            {creditsRemaining !== null ? creditsRemaining : 10} 點
+            {creditsRemaining !== null ? creditsRemaining : "—"} 點
           </span>
         </div>
       </div>
