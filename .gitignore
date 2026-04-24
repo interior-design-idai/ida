@@ -44,3 +44,5 @@ next-env.d.ts
 *_keys.txt
 *_key.txt
 pub_key.txt
+
+.vercel
