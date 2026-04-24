@@ -32,7 +32,7 @@ interface FalUpscaleOutput {
   data: { image: { url: string } };
 }
 
-// Sketch to Render — uses Flux General with ControlNet for structural guidance
+// Sketch to Render — uses Flux General text-to-image with ControlNet depth guidance
 export async function sketchToRender(params: {
   imageUrl: string;
   prompt: string;
@@ -41,20 +41,20 @@ export async function sketchToRender(params: {
   const uploadedUrl = await uploadImage(params.imageUrl);
   const fullPrompt = `${params.prompt}${params.style ? `, ${params.style} style` : ""}, photorealistic interior design, ultra realistic materials and textures, volumetric lighting, 8k, professional architectural photography, natural lighting, award winning interior design photo`;
 
+  // Use text-to-image with ControlNet — sketch provides structure, prompt drives visuals
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const result = (await fal.subscribe("fal-ai/flux-general/image-to-image" as any, {
+  const result = (await fal.subscribe("fal-ai/flux-general" as any, {
     input: {
-      image_url: uploadedUrl,
       prompt: fullPrompt,
       image_size: "landscape_16_9",
       num_inference_steps: 28,
       guidance_scale: 3.5,
-      strength: 0.90,
+      num_images: 1,
       controlnets: [
         {
           path: "Shakker-Labs/FLUX.1-dev-ControlNet-Depth",
           control_image_url: uploadedUrl,
-          conditioning_scale: 0.6,
+          conditioning_scale: 0.5,
         },
       ],
     },
