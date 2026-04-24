@@ -3,6 +3,8 @@ import { textToImage, sketchToRender, imageToImage, upscaleImage } from "@/lib/f
 import { getServiceClient } from "@/lib/supabase";
 import { translatePrompt } from "@/lib/translate";
 
+export const maxDuration = 60;
+
 const CREDIT_COSTS: Record<string, number> = {
   sketch2render: 2,
   realistic_render: 2,

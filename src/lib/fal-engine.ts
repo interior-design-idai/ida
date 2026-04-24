@@ -29,7 +29,7 @@ interface FalUpscaleOutput {
   data: { image: { url: string } };
 }
 
-// Sketch to Render — ControlNet depth for structure + optional IP-Adapter for style reference
+// Sketch to Render — fast image-to-image with strong transformation + optional IP-Adapter
 export async function sketchToRender(params: {
   imageUrl: string;
   prompt: string;
@@ -40,35 +40,42 @@ export async function sketchToRender(params: {
   const fullPrompt = `${params.prompt}${params.style ? `, ${params.style} style` : ""}, photorealistic interior design, realistic materials and textures, volumetric lighting, 8k, professional architectural photography`;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const input: Record<string, any> = {
-    prompt: fullPrompt,
-    image_size: "landscape_16_9",
-    num_inference_steps: 28,
-    guidance_scale: 3.5,
-    num_images: 1,
-    controlnets: [
-      {
-        path: "Shakker-Labs/FLUX.1-dev-ControlNet-Depth",
-        control_image_url: uploadedUrl,
-        conditioning_scale: 0.45,
-      },
-    ],
-  };
 
-  // If reference image provided, use IP-Adapter for style guidance
+  // If reference image provided, use flux-general with IP-Adapter
   if (params.referenceImageUrl) {
     const refUrl = await uploadImage(params.referenceImageUrl);
-    input.ip_adapters = [
-      {
-        path: "XLabs-AI/flux-ip-adapter",
-        image_url: refUrl,
-        scale: 0.7,
+    const result = (await fal.subscribe("fal-ai/flux-general/image-to-image" as any, {
+      input: {
+        image_url: uploadedUrl,
+        prompt: fullPrompt,
+        strength: 0.85,
+        num_inference_steps: 28,
+        guidance_scale: 3.5,
+        ip_adapters: [
+          {
+            path: "XLabs-AI/flux-ip-adapter",
+            image_url: refUrl,
+            scale: 0.7,
+          },
+        ],
       },
-    ];
+    })) as FalImageOutput;
+
+    return {
+      imageUrl: result.data.images[0].url,
+      seed: result.data.seed,
+    };
   }
 
-  const result = (await fal.subscribe("fal-ai/flux-general" as any, {
-    input,
+  // Without reference: use standard image-to-image with high strength
+  const result = (await fal.subscribe("fal-ai/flux/dev/image-to-image" as any, {
+    input: {
+      image_url: uploadedUrl,
+      prompt: fullPrompt,
+      strength: 0.9,
+      num_inference_steps: 28,
+      guidance_scale: 3.5,
+    },
   })) as FalImageOutput;
 
   return {
