@@ -34,8 +34,8 @@ export function Navbar() {
                 key={link.href}
                 href={link.href}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  pathname === link.href
-                    ? "text-accent-light bg-accent-glow"
+                  pathname === link.href || pathname.startsWith(link.href + "/")
+                    ? "text-accent-light bg-accent-glow border border-accent/20"
                     : "text-muted hover:text-foreground hover:bg-white/5"
                 }`}
               >
@@ -48,7 +48,11 @@ export function Navbar() {
           <div className="hidden md:flex items-center gap-3">
             <Link
               href="/dashboard"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-muted hover:text-foreground hover:bg-white/5 transition-colors"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                pathname === "/dashboard" || pathname.startsWith("/dashboard/")
+                  ? "text-accent-light bg-accent-glow border border-accent/20"
+                  : "text-muted hover:text-foreground hover:bg-white/5"
+              }`}
             >
               <Zap className="w-4 h-4 text-warning" />
               <span>10 credits</span>
@@ -77,8 +81,8 @@ export function Navbar() {
               href={link.href}
               onClick={() => setMobileOpen(false)}
               className={`block px-4 py-2 rounded-lg text-sm font-medium ${
-                pathname === link.href
-                  ? "text-accent-light bg-accent-glow"
+                pathname === link.href || pathname.startsWith(link.href + "/")
+                  ? "text-accent-light bg-accent-glow border border-accent/20"
                   : "text-muted hover:text-foreground"
               }`}
             >
