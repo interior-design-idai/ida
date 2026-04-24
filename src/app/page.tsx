@@ -1,205 +1,190 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Sparkles, Zap, Image, Palette, Upload, Type } from "lucide-react";
+import { ArrowRight, Sparkles, Zap, Heart, Eye, Pencil, ImageIcon, Wand2, SunMedium, Maximize, Type } from "lucide-react";
 
-const FEATURES = [
-  {
-    icon: Upload,
-    title: "草圖轉渲染",
-    desc: "上傳手繪草圖，幾秒內獲得寫實渲染圖。",
-    credits: 2,
-  },
-  {
-    icon: Image,
-    title: "寫實渲染",
-    desc: "將 3D 模型和線稿轉化為逼真的視覺效果。",
-    credits: 2,
-  },
-  {
-    icon: Palette,
-    title: "照片改造",
-    desc: "上傳現有照片並輸入文字描述，重新想像空間。",
-    credits: 3,
-  },
-  {
-    icon: Sparkles,
-    title: "風格轉換",
-    desc: "一鍵切換現代、侘寂、工業、古典等風格。",
-    credits: 2,
-  },
-  {
-    icon: Zap,
-    title: "4K 放大",
-    desc: "將低解析度圖片提升至清晰的 4K 品質。",
-    credits: 1,
-  },
-  {
-    icon: Type,
-    title: "文字生圖",
-    desc: "用文字描述你的願景，讓 AI 生成設計概念。",
-    credits: 1,
-  },
+const CATEGORIES = [
+  { id: "all", label: "推薦" },
+  { id: "interior", label: "室內設計" },
+  { id: "architecture", label: "建築設計" },
+  { id: "landscape", label: "景觀設計" },
 ];
 
-const SHOWCASE = [
-  { before: "草圖", after: "寫實渲染", image: "/showcase-1.jpg" },
-  { before: "3D 線稿", after: "寫實室內", image: "/showcase-2.jpg" },
-  { before: "照片", after: "重新設計空間", image: "/showcase-3.jpg" },
+const GALLERY_ITEMS = [
+  { image: "/showcase-1.jpg", title: "現代極簡客廳", category: "interior", likes: 128, views: 1420 },
+  { image: "/feature-2.jpg", title: "開放式生活空間", category: "interior", likes: 96, views: 890 },
+  { image: "/showcase-2.jpg", title: "奢華主臥套房", category: "interior", likes: 215, views: 2100 },
+  { image: "/feature-4.jpg", title: "侘寂風格起居室", category: "interior", likes: 184, views: 1650 },
+  { image: "/feature-3.jpg", title: "Spa 風格浴室", category: "interior", likes: 142, views: 1280 },
+  { image: "/showcase-3.jpg", title: "現代開放式廚房", category: "interior", likes: 167, views: 1520 },
+  { image: "/feature-6.jpg", title: "北歐風格書房", category: "interior", likes: 89, views: 780 },
+  { image: "/feature-1.jpg", title: "草圖轉寫實渲染", category: "interior", likes: 203, views: 1890 },
+  { image: "/feature-5.jpg", title: "材質細節特寫", category: "interior", likes: 76, views: 650 },
 ];
 
-const FEATURE_IMAGES = [
-  "/feature-1.jpg",
-  "/feature-2.jpg",
-  "/feature-3.jpg",
-  "/feature-4.jpg",
-  "/feature-5.jpg",
-  "/feature-6.jpg",
+const TOOLS = [
+  { icon: Pencil, label: "草圖轉渲染", credits: 2 },
+  { icon: ImageIcon, label: "寫實渲染", credits: 2 },
+  { icon: Wand2, label: "照片改造", credits: 3 },
+  { icon: SunMedium, label: "風格轉換", credits: 2 },
+  { icon: Maximize, label: "4K 放大", credits: 1 },
+  { icon: Type, label: "文字生圖", credits: 1 },
 ];
 
 export default function Home() {
+  const [activeCategory, setActiveCategory] = useState("all");
+
   return (
-    <div className="relative">
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-accent/5 via-transparent to-transparent" />
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-accent/10 rounded-full blur-[120px]" />
+    <div className="flex min-h-[calc(100vh-4rem)]">
+      {/* Left Sidebar */}
+      <aside className="hidden lg:flex flex-col w-64 border-r border-border p-6 shrink-0 sticky top-16 h-[calc(100vh-4rem)]">
+        {/* Brand tagline */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold gradient-text mb-1">IDAI</h2>
+          <p className="text-xs text-muted">AI 渲染平台</p>
+        </div>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-20">
-          <div className="text-center max-w-4xl mx-auto">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass text-sm text-muted mb-8">
-              <Sparkles className="w-4 h-4 text-accent-light" />
-              AI 渲染平台
-            </div>
+        {/* Navigation */}
+        <nav className="space-y-1 mb-8">
+          <Link href="/" className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-accent/10 text-accent-light text-sm font-medium">
+            <Sparkles className="w-4 h-4" />
+            靈感
+          </Link>
+          <Link href="/create" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-muted hover:text-foreground hover:bg-white/5 text-sm transition-colors">
+            <Pencil className="w-4 h-4" />
+            生圖
+          </Link>
+          <Link href="/gallery" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-muted hover:text-foreground hover:bg-white/5 text-sm transition-colors">
+            <ImageIcon className="w-4 h-4" />
+            圖庫
+          </Link>
+          <Link href="/pricing" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-muted hover:text-foreground hover:bg-white/5 text-sm transition-colors">
+            <Zap className="w-4 h-4" />
+            訂閱
+          </Link>
+        </nav>
 
-            <h1 className="text-5xl sm:text-7xl font-bold tracking-tight mb-6">
-              It&apos;s just{" "}
-              <span className="gradient-text">IDAI</span>
-              <span className="gradient-text">.</span>
-            </h1>
-
-            <p className="text-lg sm:text-xl text-muted max-w-2xl mx-auto mb-10 leading-relaxed">
-              幾秒內將草圖轉化為寫實渲染圖。
-              由 AI 驅動，專為建築師與室內設計師打造。
-            </p>
-
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link href="/create" className="btn-primary text-base flex items-center gap-2">
-                開始創作
-                <ArrowRight className="w-4 h-4" />
+        {/* AI Tools */}
+        <div className="mb-8">
+          <h3 className="text-xs font-medium text-muted uppercase tracking-wider mb-3 px-3">AI 工具</h3>
+          <div className="space-y-1">
+            {TOOLS.map((tool, i) => (
+              <Link
+                key={i}
+                href="/create"
+                className="flex items-center justify-between px-3 py-2 rounded-lg text-sm text-muted hover:text-foreground hover:bg-white/5 transition-colors"
+              >
+                <span className="flex items-center gap-2">
+                  <tool.icon className="w-3.5 h-3.5" />
+                  {tool.label}
+                </span>
+                <span className="text-xs text-yellow-500">{tool.credits}點</span>
               </Link>
-              <Link href="/gallery" className="btn-secondary text-base">
-                瀏覽作品
-              </Link>
-            </div>
-
-            <div className="flex items-center justify-center gap-8 sm:gap-16 mt-16 text-center">
-              <div>
-                <div className="text-2xl sm:text-3xl font-bold">10</div>
-                <div className="text-sm text-muted">免費點數</div>
-              </div>
-              <div className="w-px h-10 bg-border" />
-              <div>
-                <div className="text-2xl sm:text-3xl font-bold">&lt;30s</div>
-                <div className="text-sm text-muted">每張渲染</div>
-              </div>
-              <div className="w-px h-10 bg-border" />
-              <div>
-                <div className="text-2xl sm:text-3xl font-bold">6</div>
-                <div className="text-sm text-muted">AI 功能</div>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
-      </section>
 
-      {/* Showcase */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4">看見差異</h2>
-          <p className="text-muted text-lg">一鍵從概念到現實</p>
+        {/* CTA */}
+        <div className="mt-auto">
+          <Link href="/login" className="flex items-center justify-center gap-2 w-full btn-primary text-sm !py-2.5">
+            <Zap className="w-4 h-4" />
+            免費體驗 10 點
+          </Link>
         </div>
-        <div className="grid md:grid-cols-3 gap-6">
-          {SHOWCASE.map((item, i) => (
-            <div key={i} className="glass rounded-2xl overflow-hidden group hover:border-accent/50 transition-all">
-              <div className="h-48 overflow-hidden">
-                <img src={item.image} alt={item.after} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-              </div>
-              <div className="p-6">
-                <div className="flex items-center gap-3 mb-2">
-                  <span className="text-sm text-muted">{item.before}</span>
-                  <ArrowRight className="w-4 h-4 text-accent-light" />
-                  <span className="text-sm font-medium">{item.after}</span>
-                </div>
-              </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 min-w-0">
+        {/* Top Banner */}
+        <div className="bg-gradient-to-r from-accent/10 via-purple-500/10 to-accent/10 border-b border-border">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Sparkles className="w-5 h-5 text-accent-light" />
+              <span className="text-sm">
+                <strong>It&apos;s just IDAI.</strong> — 幾秒內將草圖轉為寫實渲染，免費開始使用
+              </span>
             </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Features */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4">6 大 AI 工具</h2>
-          <p className="text-muted text-lg">你需要的一切，讓設計栩栩如生</p>
-        </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {FEATURES.map((feature, i) => (
-            <div
-              key={i}
-              className="glass rounded-2xl overflow-hidden group hover:border-accent/50 transition-all"
-            >
-              <div className="h-40 overflow-hidden">
-                <img src={FEATURE_IMAGES[i]} alt={feature.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-              </div>
-              <div className="p-6">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center shrink-0 group-hover:bg-accent/20 transition-colors">
-                    <feature.icon className="w-5 h-5 text-accent-light" />
-                  </div>
-                  <h3 className="text-lg font-semibold">{feature.title}</h3>
-                </div>
-                <p className="text-sm text-muted mb-4 leading-relaxed">{feature.desc}</p>
-                <div className="flex items-center gap-1 text-xs text-accent-light">
-                  <Zap className="w-3 h-3" />
-                  {feature.credits} 點
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <div className="glass rounded-3xl p-12 text-center relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-accent/10 via-purple-500/5 to-transparent" />
-          <div className="relative">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">準備好了嗎？</h2>
-            <p className="text-muted text-lg mb-8 max-w-xl mx-auto">
-              立即註冊，獲得 10 點免費額度。無需信用卡。
-            </p>
-            <Link href="/login" className="btn-primary text-base inline-flex items-center gap-2">
-              免費開始
-              <ArrowRight className="w-4 h-4" />
+            <Link href="/create" className="btn-primary text-xs !px-4 !py-1.5 hidden sm:inline-flex items-center gap-1">
+              開始創作 <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
         </div>
-      </section>
 
-      {/* Footer */}
-      <footer className="border-t border-border py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-md bg-gradient-to-br from-accent to-purple-500 flex items-center justify-center">
-                <Sparkles className="w-3 h-3 text-white" />
-              </div>
-              <span className="font-semibold">IDAI</span>
-              <span className="text-sm text-muted">AI 渲染平台</span>
-            </div>
-            <p className="text-sm text-muted">&copy; 2026 IDAI. 保留所有權利。</p>
+        {/* Category Tabs */}
+        <div className="border-b border-border sticky top-16 z-10 bg-background">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center gap-1 overflow-x-auto py-3">
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => setActiveCategory(cat.id)}
+                className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
+                  activeCategory === cat.id
+                    ? "bg-accent text-white"
+                    : "text-muted hover:text-foreground hover:bg-white/5"
+                }`}
+              >
+                {cat.label}
+              </button>
+            ))}
           </div>
         </div>
-      </footer>
+
+        {/* Image Grid - Masonry-like */}
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
+          <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4">
+            {GALLERY_ITEMS.map((item, i) => (
+              <div
+                key={i}
+                className="break-inside-avoid glass rounded-2xl overflow-hidden group cursor-pointer hover:border-accent/30 transition-all"
+              >
+                <div className="overflow-hidden">
+                  <img
+                    src={item.image}
+                    alt={item.title}
+                    className="w-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    style={{ minHeight: i % 3 === 0 ? "280px" : i % 3 === 1 ? "200px" : "240px" }}
+                  />
+                </div>
+                <div className="p-4">
+                  <h3 className="text-sm font-medium mb-2">{item.title}</h3>
+                  <div className="flex items-center justify-between text-xs text-muted">
+                    <div className="flex items-center gap-3">
+                      <span className="flex items-center gap-1">
+                        <Heart className="w-3 h-3" />
+                        {item.likes}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Eye className="w-3 h-3" />
+                        {item.views}
+                      </span>
+                    </div>
+                    <span className="px-2 py-0.5 rounded-full bg-accent/10 text-accent-light text-xs">
+                      AI 生成
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <footer className="border-t border-border py-8 mt-8">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-md bg-gradient-to-br from-accent to-purple-500 flex items-center justify-center">
+                  <Sparkles className="w-3 h-3 text-white" />
+                </div>
+                <span className="font-semibold">IDAI</span>
+                <span className="text-sm text-muted">AI 渲染平台</span>
+              </div>
+              <p className="text-sm text-muted">&copy; 2026 IDAI. 保留所有權利。</p>
+            </div>
+          </div>
+        </footer>
+      </main>
     </div>
   );
 }
