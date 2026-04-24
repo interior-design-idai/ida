@@ -29,7 +29,7 @@ interface FalUpscaleOutput {
   data: { image: { url: string } };
 }
 
-// Sketch to Render — fast image-to-image with strong transformation + optional IP-Adapter
+// Sketch to Render — uses SDXL ControlNet (fast, <30s) for sketch-to-photorealistic
 export async function sketchToRender(params: {
   imageUrl: string;
   prompt: string;
@@ -37,45 +37,24 @@ export async function sketchToRender(params: {
   referenceImageUrl?: string;
 }): Promise<GenerateResult> {
   const uploadedUrl = await uploadImage(params.imageUrl);
-  const fullPrompt = `${params.prompt}${params.style ? `, ${params.style} style` : ""}, photorealistic interior design, realistic materials and textures, volumetric lighting, 8k, professional architectural photography`;
+  const fullPrompt = `${params.prompt}${params.style ? `, ${params.style} style` : ""}, photorealistic interior design, realistic materials and textures, volumetric lighting, 8k resolution, professional architectural photography, natural lighting, award winning photo`;
 
+  // Use SDXL ControlNet Canny — fast and effective for sketch-to-render
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const input: Record<string, any> = {
+    prompt: fullPrompt,
+    control_image_url: uploadedUrl,
+    controlnet_conditioning_scale: 0.5,
+    image_size: "landscape_16_9",
+    num_inference_steps: 25,
+    guidance_scale: 7.5,
+    num_images: 1,
+    enable_safety_checker: false,
+    negative_prompt: "sketch, wireframe, 3d model, low quality, blurry, cartoon, drawing, line art, unrealistic",
+  };
 
-  // If reference image provided, use flux-general with IP-Adapter
-  if (params.referenceImageUrl) {
-    const refUrl = await uploadImage(params.referenceImageUrl);
-    const result = (await fal.subscribe("fal-ai/flux-general/image-to-image" as any, {
-      input: {
-        image_url: uploadedUrl,
-        prompt: fullPrompt,
-        strength: 0.85,
-        num_inference_steps: 28,
-        guidance_scale: 3.5,
-        ip_adapters: [
-          {
-            path: "XLabs-AI/flux-ip-adapter",
-            image_url: refUrl,
-            scale: 0.7,
-          },
-        ],
-      },
-    })) as FalImageOutput;
-
-    return {
-      imageUrl: result.data.images[0].url,
-      seed: result.data.seed,
-    };
-  }
-
-  // Without reference: use standard image-to-image with high strength
-  const result = (await fal.subscribe("fal-ai/flux/dev/image-to-image" as any, {
-    input: {
-      image_url: uploadedUrl,
-      prompt: fullPrompt,
-      strength: 0.9,
-      num_inference_steps: 28,
-      guidance_scale: 3.5,
-    },
+  const result = (await fal.subscribe("fal-ai/fast-sdxl-controlnet-canny" as any, {
+    input,
   })) as FalImageOutput;
 
   return {
@@ -98,7 +77,6 @@ export async function textToImage(params: {
   if (params.style) parts.push(`${params.style} style`);
   parts.push("photorealistic interior design, 8k, ultra detailed, professional architectural photography");
 
-  // If reference image is provided, use flux-general with IP-Adapter
   if (params.referenceImageUrl) {
     const refUrl = await uploadImage(params.referenceImageUrl);
     const result = (await fal.subscribe("fal-ai/flux-general" as any, {
@@ -156,7 +134,6 @@ export async function imageToImage(params: {
   const uploadedUrl = await uploadImage(params.imageUrl);
   const fullPrompt = `${params.prompt}${params.style ? `, ${params.style} style` : ""}, photorealistic interior design, professional photography`;
 
-  // If reference image, use flux-general with both ControlNet and IP-Adapter
   if (params.referenceImageUrl) {
     const refUrl = await uploadImage(params.referenceImageUrl);
     const result = (await fal.subscribe("fal-ai/flux-general/image-to-image" as any, {
