@@ -143,6 +143,14 @@ function CreatePageInner() {
       return;
     }
 
+    // Get user session
+    const { supabase } = await import("@/lib/supabase-browser");
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      setError("請先登入再使用生圖功能。");
+      return;
+    }
+
     setGenerating(true);
     setError(null);
     setResult(null);
@@ -154,7 +162,7 @@ function CreatePageInner() {
     try {
       // Build the request body for the primary API
       const requestBody: Record<string, unknown> = {
-        userId: "demo-user", // In production, get from auth context
+        userId: session.user.id,
         functionType: selectedFn.id,
         prompt: prompt.trim() || undefined,
         style: style || undefined,
@@ -189,9 +197,13 @@ function CreatePageInner() {
           signal: abortControllerRef.current.signal,
         });
         data = await response.json();
+
+        // If primary API fails (RunPod not configured, etc.), fallback
+        if (!response.ok && response.status !== 402) {
+          throw new Error(data.error || "Primary API failed");
+        }
       } catch (primaryError) {
-        // If the primary endpoint fails (e.g., no Supabase/RunPod configured),
-        // fallback to the test-generate endpoint (fal.ai)
+        // If the primary endpoint fails, fallback to test-generate (fal.ai)
         if (abortControllerRef.current.signal.aborted) throw primaryError;
 
         console.warn("Primary API failed, trying test-generate fallback:", primaryError);
