@@ -29,8 +29,8 @@ interface FalUpscaleOutput {
   data: { image: { url: string } };
 }
 
-// Sketch to Render — uses Flux General + ControlNet Union Pro (depth mode)
-// Depth mode preserves 3D spatial structure from SketchUp/CAD sketches
+// Sketch to Render — uses Flux General + ControlNet Union Pro (canny mode)
+// Canny extracts edges from SketchUp/CAD screenshots for structure guidance
 // High conditioning_scale forces the model to follow the sketch layout precisely
 export async function sketchToRender(params: {
   imageUrl: string;
@@ -53,7 +53,7 @@ export async function sketchToRender(params: {
         path: "Shakker-Labs/FLUX.1-dev-ControlNet-Union-Pro",
         control_image_url: uploadedUrl,
         conditioning_scale: 0.78,
-        control_mode: "depth",
+        control_mode: "canny",
       },
     ],
   };
