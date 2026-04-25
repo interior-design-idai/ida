@@ -4,7 +4,7 @@ import { translatePrompt } from "@/lib/translate";
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { functionType, imageUrl, roomType } = body;
+  const { functionType, imageUrl, roomType, referenceImageUrl } = body;
 
   // Auto-translate Chinese prompts to English
   const prompt = body.prompt ? await translatePrompt(body.prompt) : body.prompt;
@@ -15,19 +15,19 @@ export async function POST(request: NextRequest) {
 
     switch (functionType) {
       case "text2img":
-        result = await textToImage({ prompt, style, roomType, quality: "quality" });
+        result = await textToImage({ prompt, style, roomType, quality: "quality", referenceImageUrl });
         break;
       case "sketch2render":
-        result = await sketchToRender({ imageUrl, prompt, style });
+        result = await sketchToRender({ imageUrl, prompt, style, referenceImageUrl });
         break;
       case "realistic_render":
-        result = await imageToImage({ imageUrl, prompt, style, strength: 0.5 });
+        result = await imageToImage({ imageUrl, prompt, style, strength: 0.5, referenceImageUrl });
         break;
       case "photo_remodel":
-        result = await imageToImage({ imageUrl, prompt, style, strength: 0.65 });
+        result = await imageToImage({ imageUrl, prompt, style, strength: 0.65, referenceImageUrl });
         break;
       case "style_transfer":
-        result = await imageToImage({ imageUrl, prompt: style || "modern minimalist", strength: 0.6 });
+        result = await imageToImage({ imageUrl, prompt: style || "modern minimalist", strength: 0.6, referenceImageUrl });
         break;
       case "upscale":
         result = await upscaleImage({ imageUrl });

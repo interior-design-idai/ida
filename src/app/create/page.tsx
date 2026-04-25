@@ -70,7 +70,10 @@ function dataUrlToBase64(dataUrl: string): string {
 
 function CreatePageInner() {
   const searchParams = useSearchParams();
-  const [selectedFn, setSelectedFn] = useState(FUNCTIONS[0]);
+  const [selectedFn, setSelectedFn] = useState(() => {
+    const fnParam = searchParams.get("fn");
+    return FUNCTIONS.find(f => f.id === fnParam) || FUNCTIONS[0];
+  });
   const [prompt, setPrompt] = useState(searchParams.get("prompt") || "");
   const [style, setStyle] = useState("");
   const [room, setRoom] = useState("");
@@ -111,6 +114,17 @@ function CreatePageInner() {
     };
   }, [generating]);
 
+  // Prevent browser from opening dropped files
+  useEffect(() => {
+    const prevent = (e: Event) => e.preventDefault();
+    window.addEventListener("dragover", prevent);
+    window.addEventListener("drop", prevent);
+    return () => {
+      window.removeEventListener("dragover", prevent);
+      window.removeEventListener("drop", prevent);
+    };
+  }, []);
+
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
@@ -122,6 +136,27 @@ function CreatePageInner() {
       setError(null);
     }
   }, []);
+
+  const handlePageDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (!file || !file.type.startsWith("image/")) return;
+
+    if (selectedFn.needsImage && !uploadedImage) {
+      // No main image yet — set as main image
+      setUploadedFileName(file.name);
+      const reader = new FileReader();
+      reader.onload = (ev) => setUploadedImage(ev.target?.result as string);
+      reader.readAsDataURL(file);
+    } else {
+      // Main image exists or text mode — set as reference image
+      setReferenceFileName(file.name);
+      const reader = new FileReader();
+      reader.onload = (ev) => setReferenceImage(ev.target?.result as string);
+      reader.readAsDataURL(file);
+    }
+    setError(null);
+  }, [selectedFn, uploadedImage]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -223,6 +258,9 @@ function CreatePageInner() {
         };
         if (selectedFn.needsImage && uploadedImage) {
           fallbackBody.imageUrl = uploadedImage;
+        }
+        if (referenceImage) {
+          fallbackBody.referenceImageUrl = referenceImage;
         }
 
         response = await fetch("/api/test-generate", {
@@ -390,7 +428,7 @@ function CreatePageInner() {
         </div>
 
         {/* Center - Canvas */}
-        <div className="space-y-6">
+        <div className="space-y-6" onDragOver={(e) => e.preventDefault()} onDrop={handlePageDrop}>
           {/* Error Message */}
           {error && (
             <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/30 text-sm">
@@ -475,133 +513,86 @@ function CreatePageInner() {
 
           {/* Uploaded Image Preview */}
           {!generating && selectedFn.needsImage && uploadedImage && !result && (
-            <div className="space-y-3">
-              <div className="relative glass rounded-2xl overflow-hidden">
-                <img
-                  src={uploadedImage}
-                  alt="Uploaded"
-                  className="w-full h-[300px] object-contain bg-black/20"
-                />
-                <div className="absolute top-3 left-3 px-3 py-1.5 rounded-lg glass text-xs text-muted">
-                  {uploadedFileName || "原圖"}
-                </div>
-                <button
-                  onClick={() => {
-                    setUploadedImage(null);
-                    setUploadedFileName("");
-                    setResult(null);
-                    setError(null);
-                  }}
-                  className="absolute top-3 right-3 p-2 rounded-lg glass hover:bg-white/10"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+            <div className="relative glass rounded-2xl overflow-hidden">
+              <img
+                src={uploadedImage}
+                alt="Uploaded"
+                className="w-full h-[300px] object-contain bg-black/20"
+              />
+              <div className="absolute top-3 left-3 px-3 py-1.5 rounded-lg glass text-xs text-muted">
+                {uploadedFileName || "原圖"}
               </div>
-
-              {/* Reference Image */}
-              {!referenceImage ? (
-                <div
-                  className="glass rounded-xl border border-dashed border-border hover:border-accent/50 transition-colors h-[100px] flex items-center justify-center cursor-pointer gap-3"
-                  onClick={() => document.getElementById("ref-file-input")?.click()}
-                >
-                  <ImageIcon className="w-5 h-5 text-muted" />
-                  <div>
-                    <p className="text-sm text-muted">新增參考圖（選填）</p>
-                    <p className="text-xs text-muted">AI 會參考這張圖的風格來生成</p>
-                  </div>
-                  <input
-                    id="ref-file-input"
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      setReferenceFileName(file.name);
-                      const reader = new FileReader();
-                      reader.onload = (ev) => setReferenceImage(ev.target?.result as string);
-                      reader.readAsDataURL(file);
-                    }}
-                    className="hidden"
-                  />
-                </div>
-              ) : (
-                <div className="relative glass rounded-xl overflow-hidden flex items-center gap-3 p-2">
-                  <img
-                    src={referenceImage}
-                    alt="Reference"
-                    className="w-20 h-16 object-cover rounded-lg"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium truncate">參考圖</p>
-                    <p className="text-xs text-muted truncate">{referenceFileName}</p>
-                  </div>
-                  <button
-                    onClick={() => { setReferenceImage(null); setReferenceFileName(""); }}
-                    className="p-1.5 rounded-lg hover:bg-white/10 shrink-0"
-                  >
-                    <X className="w-4 h-4 text-muted" />
-                  </button>
-                </div>
-              )}
+              <button
+                onClick={() => {
+                  setUploadedImage(null);
+                  setUploadedFileName("");
+                  setResult(null);
+                  setError(null);
+                }}
+                className="absolute top-3 right-3 p-2 rounded-lg glass hover:bg-white/10"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
           )}
 
           {/* Text-only mode */}
           {!generating && !selectedFn.needsImage && !result && (
-            <div className="space-y-3">
-              <div className="glass rounded-2xl h-[280px] flex items-center justify-center">
-                <div className="text-center">
-                  <Type className="w-16 h-16 text-accent-light/30 mx-auto mb-4" />
-                  <p className="text-muted">在提示詞面板輸入你的描述</p>
-                  <p className="text-xs text-muted mt-1">AI 將根據文字生成設計</p>
-                </div>
+            <div className="glass rounded-2xl h-[280px] flex items-center justify-center">
+              <div className="text-center">
+                <Type className="w-16 h-16 text-accent-light/30 mx-auto mb-4" />
+                <p className="text-muted">在提示詞面板輸入你的描述</p>
+                <p className="text-xs text-muted mt-1">AI 將根據文字生成設計</p>
               </div>
-              {/* Reference Image for text2img */}
-              {!referenceImage ? (
-                <div
-                  className="glass rounded-xl border border-dashed border-border hover:border-accent/50 transition-colors h-[100px] flex items-center justify-center cursor-pointer gap-3"
-                  onClick={() => document.getElementById("ref-file-input-text")?.click()}
-                >
-                  <ImageIcon className="w-5 h-5 text-muted" />
-                  <div>
-                    <p className="text-sm text-muted">新增參考圖（選填）</p>
-                    <p className="text-xs text-muted">AI 會參考這張圖的風格來生成</p>
-                  </div>
-                  <input
-                    id="ref-file-input-text"
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      setReferenceFileName(file.name);
-                      const reader = new FileReader();
-                      reader.onload = (ev) => setReferenceImage(ev.target?.result as string);
-                      reader.readAsDataURL(file);
-                    }}
-                    className="hidden"
-                  />
-                </div>
-              ) : (
-                <div className="relative glass rounded-xl overflow-hidden flex items-center gap-3 p-2">
-                  <img
-                    src={referenceImage}
-                    alt="Reference"
-                    className="w-20 h-16 object-cover rounded-lg"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium truncate">參考圖</p>
-                    <p className="text-xs text-muted truncate">{referenceFileName}</p>
-                  </div>
-                  <button
-                    onClick={() => { setReferenceImage(null); setReferenceFileName(""); }}
-                    className="p-1.5 rounded-lg hover:bg-white/10 shrink-0"
-                  >
-                    <X className="w-4 h-4 text-muted" />
-                  </button>
-                </div>
-              )}
             </div>
+          )}
+
+          {/* Reference Image — always accessible when not generating/showing result */}
+          {!generating && !result && (
+            !referenceImage ? (
+              <div
+                className="glass rounded-xl border border-dashed border-border hover:border-accent/50 transition-colors h-[100px] flex items-center justify-center cursor-pointer gap-3"
+                onClick={() => document.getElementById("ref-file-input")?.click()}
+              >
+                <ImageIcon className="w-5 h-5 text-muted" />
+                <div>
+                  <p className="text-sm text-muted">新增參考圖（選填）</p>
+                  <p className="text-xs text-muted">拖放或點擊上傳，AI 會參考風格來生成</p>
+                </div>
+                <input
+                  id="ref-file-input"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    setReferenceFileName(file.name);
+                    const reader = new FileReader();
+                    reader.onload = (ev) => setReferenceImage(ev.target?.result as string);
+                    reader.readAsDataURL(file);
+                  }}
+                  className="hidden"
+                />
+              </div>
+            ) : (
+              <div className="relative glass rounded-xl overflow-hidden flex items-center gap-3 p-2">
+                <img
+                  src={referenceImage}
+                  alt="Reference"
+                  className="w-20 h-16 object-cover rounded-lg"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium truncate">參考圖</p>
+                  <p className="text-xs text-muted truncate">{referenceFileName}</p>
+                </div>
+                <button
+                  onClick={() => { setReferenceImage(null); setReferenceFileName(""); }}
+                  className="p-1.5 rounded-lg hover:bg-white/10 shrink-0"
+                >
+                  <X className="w-4 h-4 text-muted" />
+                </button>
+              </div>
+            )
           )}
 
           {/* Result */}

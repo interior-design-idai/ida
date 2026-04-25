@@ -30,6 +30,7 @@ interface FalUpscaleOutput {
 }
 
 // Sketch to Render — uses SDXL ControlNet (fast, <30s) for sketch-to-photorealistic
+// When reference image is provided, uses Flux General with ControlNet + IP-Adapter
 export async function sketchToRender(params: {
   imageUrl: string;
   prompt: string;
@@ -39,7 +40,40 @@ export async function sketchToRender(params: {
   const uploadedUrl = await uploadImage(params.imageUrl);
   const fullPrompt = `${params.prompt}${params.style ? `, ${params.style} style` : ""}, photorealistic interior design, realistic materials and textures, volumetric lighting, 8k resolution, professional architectural photography, natural lighting, award winning photo`;
 
-  // Use SDXL ControlNet Canny — fast and effective for sketch-to-render
+  if (params.referenceImageUrl) {
+    const refUrl = await uploadImage(params.referenceImageUrl);
+    const result = (await fal.subscribe("fal-ai/flux-general" as any, {
+      input: {
+        prompt: fullPrompt,
+        image_size: "landscape_16_9",
+        num_inference_steps: 28,
+        guidance_scale: 3.5,
+        num_images: 1,
+        controlnets: [
+          {
+            path: "Shakker-Labs/FLUX.1-dev-ControlNet-Union-Pro",
+            control_image_url: uploadedUrl,
+            conditioning_scale: 0.5,
+            control_mode: "canny",
+          },
+        ],
+        ip_adapters: [
+          {
+            path: "XLabs-AI/flux-ip-adapter",
+            image_url: refUrl,
+            scale: 0.7,
+          },
+        ],
+      },
+    })) as FalImageOutput;
+
+    return {
+      imageUrl: result.data.images[0].url,
+      seed: result.data.seed,
+    };
+  }
+
+  // No reference image — use fast SDXL ControlNet Canny
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const input: Record<string, any> = {
     prompt: fullPrompt,
