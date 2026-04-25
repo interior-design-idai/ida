@@ -221,7 +221,10 @@ export default function Home() {
               <span className="font-semibold">IDAI</span>
               <span className="text-sm text-muted">AI 渲染平台</span>
             </div>
-            <p className="text-sm text-muted">&copy; 2026 IDAI. 保留所有權利。</p>
+            <p className="text-sm text-muted">
+              &copy; 2026 IDAI. 保留所有權利。
+              <span className="ml-2 text-xs opacity-50">v{process.env.NEXT_PUBLIC_APP_VERSION}</span>
+            </p>
           </div>
         </div>
       </footer>
