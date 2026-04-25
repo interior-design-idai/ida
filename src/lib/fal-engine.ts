@@ -29,9 +29,9 @@ interface FalUpscaleOutput {
   data: { image: { url: string } };
 }
 
-// Sketch to Render — uses Flux General + ControlNet Union Pro (canny mode)
-// Canny extracts edges from SketchUp/CAD screenshots for structure guidance
-// High conditioning_scale forces the model to follow the sketch layout precisely
+// Sketch to Render — uses Flux dev image-to-image
+// strength 0.8 = keep layout structure but heavily transform materials/lighting
+// Higher strength than realistic_render because sketches need more transformation
 export async function sketchToRender(params: {
   imageUrl: string;
   prompt: string;
@@ -41,36 +41,39 @@ export async function sketchToRender(params: {
   const uploadedUrl = await uploadImage(params.imageUrl);
   const fullPrompt = `${params.prompt}${params.style ? `, ${params.style} style` : ""}, photorealistic interior design rendering, realistic materials and textures, marble, wood, concrete, volumetric lighting, global illumination, 8k resolution, professional architectural visualization, V-Ray quality, ultra detailed, sharp focus`;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const input: Record<string, any> = {
-    prompt: fullPrompt,
-    image_size: "landscape_16_9",
-    num_inference_steps: 30,
-    guidance_scale: 3.5,
-    num_images: 1,
-    controlnets: [
-      {
-        path: "Shakker-Labs/FLUX.1-dev-ControlNet-Union-Pro",
-        control_image_url: uploadedUrl,
-        conditioning_scale: 0.78,
-        control_mode: "canny",
-      },
-    ],
-  };
-
   if (params.referenceImageUrl) {
     const refUrl = await uploadImage(params.referenceImageUrl);
-    input.ip_adapters = [
-      {
-        path: "XLabs-AI/flux-ip-adapter",
-        image_url: refUrl,
-        scale: 0.6,
+    const result = (await fal.subscribe("fal-ai/flux-general/image-to-image" as any, {
+      input: {
+        image_url: uploadedUrl,
+        prompt: fullPrompt,
+        strength: 0.8,
+        num_inference_steps: 30,
+        guidance_scale: 3.5,
+        ip_adapters: [
+          {
+            path: "XLabs-AI/flux-ip-adapter",
+            image_url: refUrl,
+            scale: 0.6,
+          },
+        ],
       },
-    ];
+    })) as FalImageOutput;
+
+    return {
+      imageUrl: result.data.images[0].url,
+      seed: result.data.seed,
+    };
   }
 
-  const result = (await fal.subscribe("fal-ai/flux-general" as any, {
-    input,
+  const result = (await fal.subscribe("fal-ai/flux/dev/image-to-image" as any, {
+    input: {
+      image_url: uploadedUrl,
+      prompt: fullPrompt,
+      strength: 0.8,
+      num_inference_steps: 30,
+      guidance_scale: 3.5,
+    },
   })) as FalImageOutput;
 
   return {
