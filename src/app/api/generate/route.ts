@@ -3,10 +3,10 @@ import { textToImage, sketchToRender, imageToImage, upscaleImage } from "@/lib/f
 import { getServiceClient } from "@/lib/supabase";
 import { translatePrompt } from "@/lib/translate";
 
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 const CREDIT_COSTS: Record<string, number> = {
-  sketch2render: 2,
+  sketch2render: 3,
   realistic_render: 2,
   photo_remodel: 3,
   style_transfer: 2,

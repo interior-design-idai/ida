@@ -22,7 +22,7 @@ import {
 import { PromptAssistant } from "@/components/PromptAssistant";
 
 const FUNCTIONS = [
-  { id: "sketch2render", label: "草圖轉渲染", icon: Upload, credits: 2, needsImage: true },
+  { id: "sketch2render", label: "草圖轉渲染", icon: Upload, credits: 3, needsImage: true },
   { id: "realistic_render", label: "寫實渲染", icon: ImageIcon, credits: 2, needsImage: true },
   { id: "photo_remodel", label: "照片改造", icon: Palette, credits: 3, needsImage: true },
   { id: "style_transfer", label: "風格轉換", icon: Sparkles, credits: 2, needsImage: true },

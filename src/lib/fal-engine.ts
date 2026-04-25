@@ -29,9 +29,9 @@ interface FalUpscaleOutput {
   data: { image: { url: string } };
 }
 
-// Sketch to Render — uses Flux General + InstantX ControlNet Canny
-// ControlNet extracts edges from the sketch and uses them as structural guide
-// The model then fills in photorealistic materials, lighting, and textures
+// Sketch to Render — two-stage pipeline for high quality output
+// Stage 1: Flux General + InstantX ControlNet Canny (structure from sketch)
+// Stage 2: Clarity Upscaler (refine materials, textures, lighting details)
 export async function sketchToRender(params: {
   imageUrl: string;
   prompt: string;
@@ -41,6 +41,7 @@ export async function sketchToRender(params: {
   const uploadedUrl = await uploadImage(params.imageUrl);
   const fullPrompt = `${params.prompt}${params.style ? `, ${params.style} style` : ""}, photorealistic interior design rendering, realistic materials and textures, marble, wood, concrete, volumetric lighting, global illumination, 8k resolution, professional architectural visualization, V-Ray quality, ultra detailed, sharp focus`;
 
+  // Stage 1: ControlNet generation — conditioning_scale 0.45 for photorealistic freedom
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const input: Record<string, any> = {
     prompt: fullPrompt,
@@ -52,7 +53,7 @@ export async function sketchToRender(params: {
       {
         path: "InstantX/FLUX.1-dev-Controlnet-Canny",
         control_image_url: uploadedUrl,
-        conditioning_scale: 0.75,
+        conditioning_scale: 0.45,
       },
     ],
   };
@@ -68,13 +69,26 @@ export async function sketchToRender(params: {
     ];
   }
 
-  const result = (await fal.subscribe("fal-ai/flux-general" as any, {
+  const stage1 = (await fal.subscribe("fal-ai/flux-general" as any, {
     input,
   })) as FalImageOutput;
 
+  const rawUrl = stage1.data.images[0].url;
+
+  // Stage 2: Clarity Upscaler — refine materials and add photorealistic detail
+  const stage2 = (await fal.subscribe("fal-ai/clarity-upscaler" as any, {
+    input: {
+      image_url: rawUrl,
+      scale: 2,
+      prompt: "photorealistic interior design, marble texture, wood grain, LED lighting, polished surfaces, high quality, ultra detailed, sharp focus",
+      creativity: 0.35,
+      resemblance: 0.85,
+    },
+  })) as FalUpscaleOutput;
+
   return {
-    imageUrl: result.data.images[0].url,
-    seed: result.data.seed,
+    imageUrl: stage2.data.image.url,
+    seed: stage1.data.seed,
   };
 }
 
